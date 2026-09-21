@@ -68,5 +68,17 @@ services:
       retries: 5
       start_period: 15s
 
+  # Front-end (V3): painel de indicadores em React, servido pelo nginx, que também encaminha /api para a
+  # API na mesma origem (sem CORS). Abra http://localhost:3000
+  web:
+    profiles: ["app"]
+    build: ./frontend
+    container_name: serviceflow-web
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "3000:80"
+
 volumes:
   serviceflow_pgdata:

@@ -18,6 +18,7 @@ Projeto de portfólio desenvolvido em etapas, com foco em arquitetura em camadas
 - **Health checks** (Actuator: liveness/readiness) e healthcheck no Docker
 - **Sugestão automática de categoria e prioridade** (serviço Python) durante o preenchimento do chamado, com degradação elegante se o serviço estiver fora do ar
 - **Analytics operacional** (ADMIN/TECNICO): conformidade de SLA, MTTR (média e mediana), volume por categoria/prioridade, desempenho por técnico e série diária
+- **Painel de indicadores** em React ([`frontend/`](frontend/)): SLA, MTTR, volume, técnicos e qualidade das sugestões
 - **Categorias padrão** já cadastradas (Rede, Hardware, Software, Acesso e Senha, E-mail, Impressora)
 
 ## Stack
@@ -110,7 +111,7 @@ docker compose --profile app up --build
 ### Primeiro acesso
 
 - Swagger UI: <http://localhost:8080/swagger-ui.html>
-- Na primeira execução (banco vazio) é criado um ADMIN:
+- Na primeira execução (sem nenhum ADMIN no banco) é criado um ADMIN:
   `admin@serviceflow.local` / `Admin@12345`
 - Faça login em `POST /api/auth/login`, copie o `accessToken` e clique em **Authorize** no Swagger.
 
@@ -118,6 +119,20 @@ docker compose --profile app up --build
 curl -s -X POST localhost:8080/api/auth/login -H "Content-Type: application/json" \
   -d '{"email":"admin@serviceflow.local","password":"Admin@12345"}'
 ```
+
+### Painel de indicadores (front-end)
+
+```bash
+cd frontend
+npm install
+npm run dev            # http://localhost:5173 (proxy de /api para a API em :8080)
+```
+
+Ou pelo Docker (nginx serve o front e encaminha `/api` para a API na mesma origem): `docker compose --profile app up --build` e abra <http://localhost:3000>. Veja [`frontend/README.md`](frontend/README.md).
+
+### Dados de demonstração
+
+Para ver o painel cheio sem cadastrar nada, suba a API com `DEMO_DATA=true` (`DEMO_DATA=true mvn spring-boot:run`). Ela gera ~45 dias de chamados fictícios e realistas (3 técnicos de velocidades diferentes, SLA cumprido e estourado, sugestões aceitas e trocadas) e usuários `ana.souza@demo.serviceflow.local`, `bruno.lima@…`, `carla.dias@…` (técnicos) e solicitantes, todos com a senha `demo1234`. Só roda uma vez (idempotente) e **nunca deve ser ativado em produção**.
 
 ### Sessão: access token e refresh token
 
@@ -135,7 +150,8 @@ Todas as variáveis têm padrão para desenvolvimento local. **Em qualquer ambie
 | Variável | Descrição | Padrão (dev) |
 |----------|-----------|--------------|
 | `JWT_SECRET` | Chave HMAC em Base64 (mín. 256 bits) para assinar tokens | chave de exemplo |
-| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | ADMIN criado quando não há usuários | `admin@serviceflow.local` / `Admin@12345` |
+| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | ADMIN criado quando ainda não existe nenhum | `admin@serviceflow.local` / `Admin@12345` |
+| `DEMO_DATA` | `true` gera dados fictícios de demonstração (não usar em produção) | `false` |
 | `DB_URL` / `DB_USER` / `DB_PASSWORD` | Conexão com o PostgreSQL | `localhost:5432/serviceflow` |
 
 Ajustes finos (no `application.yml`): `app.jwt.expiration-minutes` (access token, 15), `app.jwt.refresh-expiration-days` (7) e `app.sla.business-hours.*` (fuso, expediente, dias úteis, feriados).
@@ -279,4 +295,4 @@ GET  /health
 
 - **V1 (esta versão)**: API completa com SLA (corrido e comercial), segurança (JWT + refresh token), documentação e health checks.
 - **V2 — Python / Intelligence** *(em andamento)*: ✅ serviço FastAPI de sugestão · ✅ integração com a API Java · ✅ ciclo de feedback (taxa de aceitação, exportação e retreino) · próximos: publicação automatizada do modelo retreinado, futuramente LLM.
-- **V3 — Front-end / Analytics** *(em andamento)*: ✅ API de analytics (SLA, MTTR, volume, desempenho, série diária) · próximos: dashboard em React, chamados semelhantes.
+- **V3 — Front-end / Analytics** *(em andamento)*: ✅ API de analytics (SLA, MTTR, volume, desempenho, série diária) · ✅ dashboard em React · próximos: telas de chamados (abrir, acompanhar, aceitar sugestão), chamados semelhantes.
