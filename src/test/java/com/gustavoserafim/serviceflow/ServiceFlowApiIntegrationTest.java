@@ -48,7 +48,21 @@ class ServiceFlowApiIntegrationTest extends AbstractIntegrationTest {
                         .content("{\"email\":\"%s\",\"password\":\"%s\"}".formatted(email, password)))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
-        return JsonPath.read(response, "$.token");
+        return JsonPath.read(response, "$.accessToken");
+    }
+
+    private String loginResponse(String email, String password) throws Exception {
+        return mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"%s\",\"password\":\"%s\"}".formatted(email, password)))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+    }
+
+    private org.springframework.test.web.servlet.ResultActions refresh(String refreshToken) throws Exception {
+        return mockMvc.perform(post("/api/auth/refresh")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"refreshToken\":\"%s\"}".formatted(refreshToken)));
     }
 
     private Number createUser(String adminToken, String prefix, String role) throws Exception {
@@ -190,6 +204,72 @@ class ServiceFlowApiIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.title").value("Erro de validação"))
                 .andExpect(jsonPath("$.errors.name").value("O nome é obrigatório"));
+    }
+
+    @Test
+    void refreshToken_isRotatedAndItsReuseEndsAllSessions() throws Exception {
+        String admin = login(ADMIN_EMAIL, ADMIN_PASSWORD);
+        Number userId = createUser(admin, "ref", "SOLICITANTE");
+        String email = emailOf(admin, userId);
+
+        String first = loginResponse(email, PASSWORD);
+        String refresh1 = JsonPath.read(first, "$.refreshToken");
+
+        // refresh válido: devolve um par NOVO
+        String second = refresh(refresh1).andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        String refresh2 = JsonPath.read(second, "$.refreshToken");
+        String access2 = JsonPath.read(second, "$.accessToken");
+        assertThat(refresh2).isNotEqualTo(refresh1);
+        mockMvc.perform(get("/api/users/me").header("Authorization", "Bearer " + access2))
+                .andExpect(status().isOk());
+
+        // reutilizar o token antigo = possível roubo: 401 e a sessão inteira cai
+        refresh(refresh1).andExpect(status().isUnauthorized());
+        refresh(refresh2).andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/api/users/me").header("Authorization", "Bearer " + access2))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void logout_revokesTheRefreshToken() throws Exception {
+        String admin = login(ADMIN_EMAIL, ADMIN_PASSWORD);
+        String email = emailOf(admin, createUser(admin, "out", "SOLICITANTE"));
+        String refreshToken = JsonPath.read(loginResponse(email, PASSWORD), "$.refreshToken");
+
+        mockMvc.perform(post("/api/auth/logout")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"refreshToken\":\"%s\"}".formatted(refreshToken)))
+                .andExpect(status().isNoContent());
+
+        refresh(refreshToken).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void passwordChange_endsPreviousSessionsAndAcceptsNewPassword() throws Exception {
+        String admin = login(ADMIN_EMAIL, ADMIN_PASSWORD);
+        String email = emailOf(admin, createUser(admin, "pwd", "SOLICITANTE"));
+        String session = loginResponse(email, PASSWORD);
+        String access = JsonPath.read(session, "$.accessToken");
+        String refreshToken = JsonPath.read(session, "$.refreshToken");
+
+        mockMvc.perform(post("/api/users/me/password")
+                        .header("Authorization", "Bearer " + access)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"currentPassword\":\"%s\",\"newPassword\":\"outra-senha-1\"}".formatted(PASSWORD)))
+                .andExpect(status().isNoContent());
+
+        // tudo que existia antes da troca deixa de valer
+        mockMvc.perform(get("/api/users/me").header("Authorization", "Bearer " + access))
+                .andExpect(status().isUnauthorized());
+        refresh(refreshToken).andExpect(status().isUnauthorized());
+
+        // a senha antiga não entra mais; a nova, sim
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"%s\",\"password\":\"%s\"}".formatted(email, PASSWORD)))
+                .andExpect(status().isUnauthorized());
+        login(email, "outra-senha-1");
     }
 
     @Test

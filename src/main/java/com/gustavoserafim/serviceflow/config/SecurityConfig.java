@@ -44,7 +44,7 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/login", "/error").permitAll()
+                        .requestMatchers("/api/auth/login", "/api/auth/refresh", "/api/auth/logout", "/error").permitAll()
                         // Health é público para orquestradores (Docker/Kubernetes) e monitoramento.
                         .requestMatchers("/actuator/health/**").permitAll()
                         // Documentação pública (só leitura do contrato; as rotas em si seguem protegidas).

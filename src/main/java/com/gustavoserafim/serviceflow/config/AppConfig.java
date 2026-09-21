@@ -3,9 +3,12 @@ package com.gustavoserafim.serviceflow.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import org.springframework.scheduling.annotation.EnableScheduling;
+
 import java.time.Clock;
 
 @Configuration
+@EnableScheduling // habilita métodos @Scheduled (ex: limpeza diária de refresh tokens expirados)
 public class AppConfig {
 
     /**

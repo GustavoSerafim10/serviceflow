@@ -50,7 +50,9 @@ app:
   jwt:
     # Chave HMAC em Base64 (mínimo 256 bits). Quem tem esta chave forja tokens.
     secret: ${JWT_SECRET:c2VydmljZWZsb3ctZGV2LW9ubHktc2VjcmV0LWNoYW5nZS1tZS1pbi1wcm9kdWN0aW9uLTAxMjM0NTY3ODk=}
-    expiration-minutes: 60
+    # Access token curto (se vazar, vale pouco); a sessão é renovada pelo refresh token.
+    expiration-minutes: 15
+    refresh-expiration-days: 7
   # Primeiro ADMIN, criado na subida SÓ se a tabela de usuários estiver vazia.
   bootstrap-admin:
     name: Administrador

@@ -27,10 +27,14 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final RefreshTokenService refreshTokenService;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository,
+                       PasswordEncoder passwordEncoder,
+                       RefreshTokenService refreshTokenService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.refreshTokenService = refreshTokenService;
     }
 
     @Transactional(readOnly = true)
@@ -107,8 +111,10 @@ public class UserService {
 
     private void applyNewPassword(User user, String rawPassword) {
         user.setPasswordHash(passwordEncoder.encode(rawPassword));
-        // Subir a versão invalida todos os JWTs já emitidos para este usuário.
+        // Subir a versão invalida todos os JWTs já emitidos para este usuário...
         user.setTokenVersion(user.getTokenVersion() + 1);
+        // ...e revogar os refresh tokens impede que ele obtenha novos a partir dos antigos.
+        refreshTokenService.revokeAllFor(user.getId());
     }
 
     private User getOrThrow(Long id) {

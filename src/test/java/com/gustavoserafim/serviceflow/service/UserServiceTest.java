@@ -35,6 +35,9 @@ class UserServiceTest {
     @Mock
     private PasswordEncoder passwordEncoder;
 
+    @Mock
+    private RefreshTokenService refreshTokenService;
+
     @InjectMocks
     private UserService userService;
 
@@ -76,7 +79,8 @@ class UserServiceTest {
         userService.changeOwnPassword("ana@empresa.com", new ChangePasswordRequest("atual1234", "nova12345"));
 
         assertThat(user.getPasswordHash()).isEqualTo("HASH_NOVO");
-        assertThat(user.getTokenVersion()).isEqualTo(5); // sessões antigas invalidadas
+        assertThat(user.getTokenVersion()).isEqualTo(5); // access tokens antigos invalidados
+        verify(refreshTokenService).revokeAllFor(user.getId()); // e refresh tokens revogados
     }
 
     @Test
