@@ -28,6 +28,20 @@ spring:
 server:
   port: 8080
 
+# Actuator: por segurança, só o health é exposto na web (sem detalhes internos).
+# /actuator/health/liveness  -> "o processo está vivo?"
+# /actuator/health/readiness -> "está pronto para receber tráfego?" (inclui o banco)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never
+
 # Configurações próprias do ServiceFlow. A sintaxe ${VAR:padrão} lê a variável
 # de ambiente VAR e, se ela não existir, usa o valor padrão (bom para dev).
 # EM PRODUÇÃO: defina JWT_SECRET, ADMIN_EMAIL e ADMIN_PASSWORD no ambiente;

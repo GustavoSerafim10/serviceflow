@@ -61,6 +61,12 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- Actuator: endpoints operacionais; expomos apenas /actuator/health (monitoramento e healthcheck do Docker) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
         <!-- springdoc: gera a documentação OpenAPI (/v3/api-docs) e a interface Swagger UI a partir dos controllers -->
         <dependency>
             <groupId>org.springdoc</groupId>

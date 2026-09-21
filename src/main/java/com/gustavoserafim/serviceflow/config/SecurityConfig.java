@@ -45,6 +45,8 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/login", "/error").permitAll()
+                        // Health é público para orquestradores (Docker/Kubernetes) e monitoramento.
+                        .requestMatchers("/actuator/health/**").permitAll()
                         // Documentação pública (só leitura do contrato; as rotas em si seguem protegidas).
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .anyRequest().authenticated())

@@ -17,6 +17,11 @@ RUN mvn -B -q package -DskipTests
 FROM eclipse-temurin:21-jre
 WORKDIR /app
 
+# curl: usado pelo healthcheck do Compose (a imagem JRE não o traz).
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
+
 # Não roda como root: se a aplicação for comprometida, o estrago é menor.
 RUN useradd --system --no-create-home appuser
 COPY --from=build /app/target/*.jar app.jar
