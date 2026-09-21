@@ -273,6 +273,42 @@ class ServiceFlowApiIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void suggestions_whenIntelligenceServiceIsDown_degradesGracefully() throws Exception {
+        String admin = login(ADMIN_EMAIL, ADMIN_PASSWORD);
+
+        // exige autenticação como qualquer outra rota
+        mockMvc.perform(post("/api/tickets/suggestions")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"title\":\"Sem toner\",\"description\":\"Impressora parou\"}"))
+                .andExpect(status().isUnauthorized());
+
+        // serviço Python inacessível: 200 com available=false, nunca 5xx
+        mockMvc.perform(post("/api/tickets/suggestions")
+                        .header("Authorization", "Bearer " + admin)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"title\":\"Sem toner\",\"description\":\"Impressora parou\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.available").value(false));
+
+        // validação idêntica à do chamado
+        mockMvc.perform(post("/api/tickets/suggestions")
+                        .header("Authorization", "Bearer " + admin)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"title\":\"\",\"description\":\"x\"}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void defaultCategories_areAvailableOutOfTheBox() throws Exception {
+        String admin = login(ADMIN_EMAIL, ADMIN_PASSWORD);
+
+        mockMvc.perform(get("/api/categories").header("Authorization", "Bearer " + admin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.name == 'Impressora')]").isNotEmpty())
+                .andExpect(jsonPath("$[?(@.name == 'Acesso e Senha')]").isNotEmpty());
+    }
+
+    @Test
     void login_withWrongPassword_returnsUnauthorized() throws Exception {
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)

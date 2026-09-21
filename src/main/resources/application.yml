@@ -53,6 +53,15 @@ app:
     # Access token curto (se vazar, vale pouco); a sessão é renovada pelo refresh token.
     expiration-minutes: 15
     refresh-expiration-days: 7
+  # Serviço Python de sugestão de categoria/prioridade (opcional: se estiver fora
+  # do ar, a API segue funcionando e responde "sugestão indisponível").
+  intelligence:
+    enabled: true
+    base-url: ${INTELLIGENCE_URL:http://localhost:8000}
+    connect-timeout: 500ms
+    read-timeout: 2s
+    # Piso de confiança: uma sugestão principal com menos que isso é ruído e não é oferecida.
+    min-confidence: 0.30
   # Calendário usado pelas regras de SLA marcadas como "horário comercial".
   sla:
     business-hours:

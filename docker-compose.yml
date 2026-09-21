@@ -34,6 +34,8 @@ services:
       DB_URL: jdbc:postgresql://postgres:5432/serviceflow
       DB_USER: serviceflow
       DB_PASSWORD: serviceflow
+      # Serviço Python de sugestões (opcional: a API funciona mesmo sem ele).
+      INTELLIGENCE_URL: http://intelligence:8000
       # Os valores após ":-" são só para demonstração local. Em qualquer ambiente
       # real, defina os seus (ex: JWT_SECRET=... docker compose --profile app up).
       JWT_SECRET: ${JWT_SECRET:-c2VydmljZWZsb3ctZGV2LW9ubHktc2VjcmV0LWNoYW5nZS1tZS1pbi1wcm9kdWN0aW9uLTAxMjM0NTY3ODk=}

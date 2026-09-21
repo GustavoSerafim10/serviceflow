@@ -3,6 +3,8 @@ package com.gustavoserafim.serviceflow.repository;
 import com.gustavoserafim.serviceflow.entity.Category;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.Optional;
+
 /**
  * Camada de acesso a dados. Repare que é uma INTERFACE, sem implementação:
  * o Spring Data JPA gera a implementação em tempo de execução.
@@ -17,6 +19,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface CategoryRepository extends JpaRepository<Category, Long> {
 
     boolean existsByNameIgnoreCase(String name);
+
+    // Usado para casar o rótulo sugerido pela IA com uma categoria cadastrada.
+    Optional<Category> findByNameIgnoreCase(String name);
 
     // Usado na edição: outro registro (id diferente) já tem esse nome?
     boolean existsByNameIgnoreCaseAndIdNot(String name, Long id);

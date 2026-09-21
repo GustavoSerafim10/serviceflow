@@ -21,7 +21,9 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  * Diferente dos testes unitários (Mockito), aqui nada é simulado: valida que
  * migrations, mapeamentos JPA, segurança e regras funcionam JUNTOS.
  */
-@SpringBootTest
+// base-url apontando para uma porta sem ninguém ouvindo: os testes de integração nunca dependem
+// (nem falam com) o serviço Python, e verificam que a API degrada com elegância sem ele.
+@SpringBootTest(properties = "app.intelligence.base-url=http://localhost:1")
 @AutoConfigureMockMvc
 @Testcontainers(disabledWithoutDocker = true) // sem Docker, os testes são PULADOS (aparecem como "Skipped"), não falham
 public abstract class AbstractIntegrationTest {

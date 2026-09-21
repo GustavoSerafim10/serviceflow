@@ -16,6 +16,8 @@ Projeto de portfólio desenvolvido em etapas, com foco em arquitetura em camadas
 - **Busca com filtros combináveis e paginação**
 - **Swagger UI**, tratamento global de erros (RFC 7807), migrations versionadas
 - **Health checks** (Actuator: liveness/readiness) e healthcheck no Docker
+- **Sugestão automática de categoria e prioridade** (serviço Python) durante o preenchimento do chamado, com degradação elegante se o serviço estiver fora do ar
+- **Categorias padrão** já cadastradas (Rede, Hardware, Software, Acesso e Senha, E-mail, Impressora)
 
 ## Stack
 
@@ -152,6 +154,7 @@ Ajustes finos (no `application.yml`): `app.jwt.expiration-minutes` (access token
 | PUT | `/api/sla-rules/{priority}` (`resolutionMinutes`, `businessHours`) | ADMIN |
 | GET | `/actuator/health[/liveness\|/readiness]` | público |
 | POST · GET | `/api/tickets` | autenticado (GET filtra por visibilidade) |
+| POST | `/api/tickets/suggestions` (sugere categoria e prioridade) | autenticado |
 | GET | `/api/tickets/{id}` | dono, técnicos e admin |
 | PUT | `/api/tickets/{id}/assignment` | ADMIN, TECNICO |
 | PATCH | `/api/tickets/{id}/status` | conforme a matriz de permissões |
@@ -191,7 +194,23 @@ mvn test
 
 ## Intelligence — V2 (em andamento)
 
-Microsserviço **Python (FastAPI + scikit-learn)** em [`intelligence/`](intelligence/) que sugere **categoria e prioridade** de um chamado a partir do título e da descrição. Roda de forma independente; a integração com a API Java (sugestão ao abrir o chamado) é a próxima etapa.
+Microsserviço **Python (FastAPI + scikit-learn)** em [`intelligence/`](intelligence/) que sugere **categoria e prioridade** de um chamado a partir do título e da descrição. A API Java o consome em `POST /api/tickets/suggestions`.
+
+**Como a integração funciona**
+- O formulário chama a sugestão **enquanto o usuário preenche** título e descrição; o usuário aceita ou ignora. Abrir o chamado (`POST /api/tickets`) **não depende** do serviço Python.
+- O serviço Python devolve *nomes* de categoria; a API os casa com as **categorias ativas** do sistema (ignorando maiúsculas/minúsculas) e devolve o `id` pronto para uso. Uma categoria desativada pelo ADMIN nunca é sugerida.
+- Sugestões principais com confiança abaixo de `app.intelligence.min-confidence` (padrão 30%) não são oferecidas.
+- **Degradação elegante:** serviço desligado, fora do ar, lento (timeouts de 0,5 s/2 s) ou com resposta inválida → `200` com `"available": false`. Nada quebra e a API segue saudável.
+- Configuração: `INTELLIGENCE_URL` (padrão `http://localhost:8000`; no Compose, `http://intelligence:8000`) e `app.intelligence.enabled`.
+
+```
+POST /api/tickets/suggestions   {"title": "...", "description": "..."}
+→ { "available": true, "modelVersion": "v1-ad34633d",
+    "category": {"id": 4, "name": "Impressora", "confidence": 0.91, "alternatives": [...]},
+    "priority": {"priority": "P3", "confidence": 0.66, "alternatives": [...]} }
+```
+
+**Serviço Python isolado**
 
 ```bash
 cd intelligence
@@ -205,7 +224,7 @@ pytest                                               # testes
 Ou pelo Docker (o modelo é treinado durante o build): `docker compose --profile app up --build`.
 
 ```
-POST /v1/suggestions   {"title": "...", "description": "..."}
+POST /v1/suggestions   {"title": "...", "description": "..."}      (contrato interno do serviço Python)
 → { "category": {"label": "Impressora", "confidence": 0.91, "alternatives": [...]},
     "priority": {"label": "P3", "confidence": 0.66, "alternatives": [...]},
     "modelVersion": "v1-ad34633d" }
@@ -222,5 +241,5 @@ GET  /health
 ## Roadmap
 
 - **V1 (esta versão)**: API completa com SLA (corrido e comercial), segurança (JWT + refresh token), documentação e health checks.
-- **V2 — Python / Intelligence** *(em andamento)*: ✅ serviço FastAPI de sugestão de categoria e prioridade · próximos: integração com a API Java, feedback do usuário para melhorar o modelo, futuramente LLM.
+- **V2 — Python / Intelligence** *(em andamento)*: ✅ serviço FastAPI de sugestão · ✅ integração com a API Java · próximos: registrar se o usuário aceitou a sugestão (feedback para melhorar o modelo), retreino com chamados reais, futuramente LLM.
 - **V3 — Front-end / Analytics**: React, dashboard, indicadores de SLA, MTTR, volume por categoria, chamados semelhantes.
