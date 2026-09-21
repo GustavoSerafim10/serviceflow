@@ -98,6 +98,23 @@
             <optional>true</optional>
         </dependency>
 
+        <!-- Testcontainers: sobe um PostgreSQL real e descartável (via Docker) para os testes de integração -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-testcontainers</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>test</scope>
+        </dependency>
+
         <!-- Testes: JUnit 5 + Mockito + AssertJ, já incluídos no starter-test -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

@@ -3,9 +3,11 @@ spring:
     name: serviceflow
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/serviceflow
-    username: serviceflow
-    password: serviceflow
+    # Padrões servem para desenvolvimento local; no Docker Compose o banco é
+    # informado por variáveis de ambiente (DB_URL, DB_USER, DB_PASSWORD).
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/serviceflow}
+    username: ${DB_USER:serviceflow}
+    password: ${DB_PASSWORD:serviceflow}
 
   jpa:
     # 'validate': o Hibernate NUNCA cria/altera tabelas sozinho, apenas confere
@@ -14,7 +16,7 @@ spring:
     # escondida e é o padrão profissional (ddl-auto: update é ok só em protótipo).
     hibernate:
       ddl-auto: validate
-    show-sql: true
+    show-sql: false   # mude para true para ver o SQL gerado pelo Hibernate ao depurar
     properties:
       hibernate:
         format_sql: true

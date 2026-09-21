@@ -11,6 +11,36 @@ services:
       - "5432:5432"
     volumes:
       - serviceflow_pgdata:/var/lib/postgresql/data
+    # Só considera o banco "saudável" quando ele aceita conexões; a API espera por isso.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U serviceflow -d serviceflow"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # A API só sobe com:  docker compose --profile app up --build
+  # Sem o perfil, "docker compose up -d" sobe apenas o banco (uso no dia a dia
+  # de desenvolvimento, rodando a aplicação pelo Maven/IDE).
+  api:
+    profiles: ["app"]
+    build: .
+    container_name: serviceflow-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # Dentro da rede do Compose o banco é alcançado pelo nome do serviço ("postgres").
+      DB_URL: jdbc:postgresql://postgres:5432/serviceflow
+      DB_USER: serviceflow
+      DB_PASSWORD: serviceflow
+      # Os valores após ":-" são só para demonstração local. Em qualquer ambiente
+      # real, defina os seus (ex: JWT_SECRET=... docker compose --profile app up).
+      JWT_SECRET: ${JWT_SECRET:-c2VydmljZWZsb3ctZGV2LW9ubHktc2VjcmV0LWNoYW5nZS1tZS1pbi1wcm9kdWN0aW9uLTAxMjM0NTY3ODk=}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@serviceflow.local}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Admin@12345}
+    ports:
+      - "8080:8080"
 
 volumes:
   serviceflow_pgdata:
