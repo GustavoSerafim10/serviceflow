@@ -4,6 +4,7 @@ import com.gustavoserafim.serviceflow.dto.UserCreateRequest;
 import com.gustavoserafim.serviceflow.dto.UserResponse;
 import com.gustavoserafim.serviceflow.dto.UserUpdateRequest;
 import com.gustavoserafim.serviceflow.service.UserService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -28,6 +29,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/users")
+@Tag(name = "Usuários", description = "Gestão de usuários (somente ADMIN, exceto /me)")
 @PreAuthorize("hasRole('ADMIN')")
 public class UserController {
 

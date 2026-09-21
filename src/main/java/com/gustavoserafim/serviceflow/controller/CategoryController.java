@@ -3,6 +3,7 @@ package com.gustavoserafim.serviceflow.controller;
 import com.gustavoserafim.serviceflow.dto.CategoryRequest;
 import com.gustavoserafim.serviceflow.dto.CategoryResponse;
 import com.gustavoserafim.serviceflow.service.CategoryService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -35,6 +36,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/categories")
+@Tag(name = "Categorias", description = "Categorias de chamados (leitura: autenticados; escrita: ADMIN)")
 public class CategoryController {
 
     private final CategoryService categoryService;

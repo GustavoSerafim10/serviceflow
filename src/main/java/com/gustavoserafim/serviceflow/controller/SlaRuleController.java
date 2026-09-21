@@ -4,6 +4,7 @@ import com.gustavoserafim.serviceflow.dto.SlaRuleResponse;
 import com.gustavoserafim.serviceflow.dto.SlaRuleUpdateRequest;
 import com.gustavoserafim.serviceflow.entity.Priority;
 import com.gustavoserafim.serviceflow.service.SlaRuleService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,6 +24,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/sla-rules")
+@Tag(name = "Regras de SLA", description = "Prazo de resolução por prioridade (P1 a P4)")
 public class SlaRuleController {
 
     private final SlaRuleService slaRuleService;
