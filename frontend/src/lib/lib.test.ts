@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { CategoryStat } from '../api/types'
 import { foldCategories } from './fold'
 import { formatDayLong, formatDayShort, formatMinutes, formatRate, toIsoDay } from './format'
+import { prettifyHistory } from './labels'
 import { periodForPreset, validatePeriod } from './period'
 import { niceScale } from './scale'
 
@@ -54,6 +55,16 @@ describe('períodos', () => {
     expect(validatePeriod({ from: '2025-01-01', to: '2025-12-31' })).toBeNull()      // 365 dias
     expect(validatePeriod({ from: '2024-01-01', to: '2024-12-31' })).toBeNull()      // 366 (ano bissexto)
     expect(validatePeriod({ from: '2024-01-01', to: '2025-01-01' })).toMatch(/366/)  // 367
+  })
+})
+
+describe('prettifyHistory', () => {
+  it('troca códigos de status por texto legível e datas ISO por datas locais', () => {
+    expect(prettifyHistory('Status: ABERTO → EM_ATENDIMENTO')).toBe('Status: Aberto → em atendimento')
+    expect(prettifyHistory('Atribuído a Bia')).toBe('Atribuído a Bia')
+    const text = prettifyHistory('Chamado aberto com prioridade P1 (prazo de SLA: 2026-09-22T03:45:23.432Z)')
+    expect(text).not.toContain('T03:45')
+    expect(text).toMatch(/prazo de SLA: \d{2}\/\d{2}\/2026/)
   })
 })
 

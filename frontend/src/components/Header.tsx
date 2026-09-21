@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../auth/AuthContext'
 import type { User } from '../api/types'
+import { EMBEDDED, STANDALONE } from '../local/mode'
 
 type Theme = 'system' | 'light' | 'dark'
 const THEME_KEY = 'sf.theme'
@@ -21,6 +22,7 @@ function useTheme() {
   const [theme, setTheme] = useState<Theme>(readTheme)
 
   useEffect(() => {
+    if (EMBEDDED) return // página incorporada: o tema é do visualizador
     const root = document.documentElement
     if (theme === 'system') root.removeAttribute('data-theme')
     else root.setAttribute('data-theme', theme)
@@ -43,14 +45,16 @@ export function Header({ user }: { user: User }) {
 
   return (
     <header className="app-header">
-      <div className="brand">ServiceFlow <span>· Indicadores</span></div>
+      <div className="brand">ServiceFlow <span>· Chamados de TI</span></div>
       <div className="header-actions">
-        <span className="user-chip">
-          <strong>{user.name}</strong>
-          {user.name !== ROLE_LABEL[user.role] && <> · {ROLE_LABEL[user.role]}</>}
-        </span>
-        <button type="button" className="btn" onClick={cycle}>{LABEL[theme]}</button>
-        <button type="button" className="btn" onClick={() => void logout()}>Sair</button>
+        {!STANDALONE && (
+          <span className="user-chip">
+            <strong>{user.name}</strong>
+            {user.name !== ROLE_LABEL[user.role] && <> · {ROLE_LABEL[user.role]}</>}
+          </span>
+        )}
+        {!EMBEDDED && <button type="button" className="btn" onClick={cycle}>{LABEL[theme]}</button>}
+        {!STANDALONE && <button type="button" className="btn" onClick={() => void logout()}>Sair</button>}
       </div>
     </header>
   )

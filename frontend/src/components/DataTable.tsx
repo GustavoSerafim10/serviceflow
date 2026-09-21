@@ -3,6 +3,8 @@ import type { ReactNode } from 'react'
 export interface Column<T> {
   header: string
   cell: (row: T) => ReactNode
+  /** Números ficam à direita (padrão); colunas de texto pedem 'left'. */
+  align?: 'left' | 'right'
 }
 
 interface Props<T> {
@@ -24,7 +26,7 @@ export function DataTable<T>({ caption, columns, rows, rowKey, empty = 'Sem dado
         <thead>
           <tr>
             {columns.map((c) => (
-              <th key={c.header} scope="col">{c.header}</th>
+              <th key={c.header} scope="col" className={c.align === 'left' ? 'left' : undefined}>{c.header}</th>
             ))}
           </tr>
         </thead>
@@ -32,7 +34,7 @@ export function DataTable<T>({ caption, columns, rows, rowKey, empty = 'Sem dado
           {rows.map((row) => (
             <tr key={rowKey(row)}>
               {columns.map((c) => (
-                <td key={c.header}>{c.cell(row)}</td>
+                <td key={c.header} className={c.align === 'left' ? 'left' : undefined}>{c.cell(row)}</td>
               ))}
             </tr>
           ))}

@@ -1,22 +1,14 @@
 import { tokenStore } from '../auth/tokenStore'
+import { localRequest } from '../local/localApi'
+import { STANDALONE } from '../local/mode'
+import { ApiError } from './errors'
 import type { TokenResponse } from './types'
 
 // Mesma origem: em desenvolvimento o Vite encaminha /api para a API (proxy); em produção o nginx faz o mesmo.
 // Sem CORS a configurar. VITE_API_BASE permite apontar para outra origem, se necessário.
 const BASE: string = import.meta.env.VITE_API_BASE ?? ''
 
-/** Erro HTTP da API. A API responde erros como ProblemDetail (RFC 7807): title + detail. */
-export class ApiError extends Error {
-  readonly status: number
-  readonly title: string
-
-  constructor(status: number, title: string, detail: string) {
-    super(detail || title)
-    this.name = 'ApiError'
-    this.status = status
-    this.title = title
-  }
-}
+export { ApiError }
 
 async function toApiError(res: Response): Promise<ApiError> {
   try {
@@ -109,6 +101,9 @@ function send(path: string, { method = 'GET', body, auth = true }: RequestOption
 }
 
 export async function apiFetch<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  // Modo local: sem rede. Um "motor" no navegador responde no lugar da API (ver src/local/).
+  if (STANDALONE) return localRequest<T>(path, options)
+
   let res = await send(path, options)
 
   // Access token expirado (ou ausente após um recarregamento): renova UMA vez e repete a chamada.

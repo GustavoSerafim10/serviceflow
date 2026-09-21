@@ -3,9 +3,12 @@ import { useState } from 'react'
 import {
   getByCategory, getByPriority, getByTechnician, getSuggestionMetrics, getSummary, getTimeline,
 } from '../api/endpoints'
-import type { Period, Priority, User } from '../api/types'
+import type { Period, User } from '../api/types'
 import { foldCategories } from '../lib/fold'
 import { formatDayLong, formatDayShort, formatInt, formatMinutes, formatRate } from '../lib/format'
+import { PRIORITY_INFO } from '../lib/labels'
+import { paths } from '../lib/router'
+import { STANDALONE } from '../local/mode'
 import { periodForPreset, validatePeriod, type PeriodPreset } from '../lib/period'
 import { BarChart, type BarRow } from './charts/BarChart'
 import { LineChart, type LineSeries } from './charts/LineChart'
@@ -18,14 +21,6 @@ const TIMELINE_SERIES: LineSeries[] = [
   { key: 'opened', label: 'Abertos', color: 'var(--series-1)' },
   { key: 'resolved', label: 'Resolvidos', color: 'var(--series-2)' },
 ]
-
-// Prioridade é uma escala ORDINAL (a ordem importa): rampa de um matiz só, do mais urgente ao menos.
-const PRIORITY_INFO: Record<Priority, { label: string; color: string }> = {
-  P1: { label: 'P1 · Crítico', color: 'var(--prio-1)' },
-  P2: { label: 'P2 · Alto', color: 'var(--prio-2)' },
-  P3: { label: 'P3 · Médio', color: 'var(--prio-3)' },
-  P4: { label: 'P4 · Baixo', color: 'var(--prio-4)' },
-}
 
 const STATUS_LABEL: Record<string, string> = {
   ABERTO: 'Abertos',
@@ -59,8 +54,9 @@ export function Dashboard({ user }: { user: User }) {
   const byCategory = useQuery({ queryKey: ['by-category', period], queryFn: () => getByCategory(period), ...options })
   const byTechnician = useQuery({ queryKey: ['by-technician', period], queryFn: () => getByTechnician(period), ...options })
   const suggestions = useQuery({
-    queryKey: ['suggestion-metrics'], queryFn: getSuggestionMetrics, enabled: user.role === 'ADMIN',
+    queryKey: ['suggestion-metrics'], queryFn: getSuggestionMetrics, enabled: user.role === 'ADMIN' && !STANDALONE,
   })
+  const noTicketsYet = summary.data !== undefined && summary.data.current.total === 0
 
   const queries = [summary, timeline, byPriority, byCategory, byTechnician]
   const failed = queries.find((q) => q.isError)
@@ -75,6 +71,13 @@ export function Dashboard({ user }: { user: User }) {
           Não foi possível carregar os indicadores{failed.error instanceof Error ? `: ${failed.error.message}` : '.'}{' '}
           <button className="btn" type="button" onClick={() => queries.forEach((q) => void q.refetch())}>Tentar novamente</button>
         </div>
+      )}
+
+      {noTicketsYet && (
+        <p className="local-banner" role="note">
+          Ainda não há chamados. Os indicadores aparecem conforme você abre e atende chamados:{' '}
+          <a href={paths.new}>abrir o primeiro chamado</a>.
+        </p>
       )}
 
       <div className="dashboard" data-stale={fetching && !!summary.data}>
@@ -238,7 +241,7 @@ export function Dashboard({ user }: { user: User }) {
         </div>
 
         {/* ------------------------------------------------ qualidade das sugestões (ADMIN) */}
-        {user.role === 'ADMIN' && (
+        {user.role === 'ADMIN' && !STANDALONE && (
           <section className="card" aria-label="Qualidade das sugestões automáticas">
             <div className="card-head">
               <div>

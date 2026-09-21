@@ -2,6 +2,8 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { onSessionExpired, refreshSession } from '../api/client'
 import * as api from '../api/endpoints'
 import type { User } from '../api/types'
+import { getEngine } from '../local/localApi'
+import { STANDALONE } from '../local/mode'
 import { tokenStore } from './tokenStore'
 
 type AuthState =
@@ -18,7 +20,10 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<AuthState>({ status: 'loading' })
+  // Modo local: não há login (é o seu computador); já entra como você.
+  const [state, setState] = useState<AuthState>(
+    STANDALONE ? { status: 'authenticated', user: getEngine().me() } : { status: 'loading' },
+  )
 
   // O servidor recusou a renovação (refresh expirado, revogado ou reutilizado): volta ao login.
   useEffect(() => {
@@ -28,6 +33,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Ao abrir a página: se há refresh token guardado, tenta restaurar a sessão (o access token vive só em memória).
   useEffect(() => {
+    if (STANDALONE) return
     let cancelled = false
     async function restore() {
       if (!tokenStore.getRefresh()) {

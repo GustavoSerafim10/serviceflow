@@ -130,6 +130,13 @@ npm run dev            # http://localhost:5173 (proxy de /api para a API em :808
 
 Ou pelo Docker (nginx serve o front e encaminha `/api` para a API na mesma origem): `docker compose --profile app up --build` e abra <http://localhost:3000>. Veja [`frontend/README.md`](frontend/README.md).
 
+### Versão local (sem servidor, sem instalar Java nem Docker)
+
+O front também roda **sozinho**, guardando tudo no navegador de quem usa: `cd frontend && npm install && npm run dev:local`.
+É a forma mais simples de usar e de publicar uma versão pública que **começa vazia** (cada visitante tem os próprios dados,
+que nunca saem do navegador). Tem as telas de chamados, categorias, prazos de SLA e o painel, com as mesmas regras do backend.
+Só não tem a sugestão automática (depende do serviço Python). Detalhes em [`frontend/README.md`](frontend/README.md).
+
 ### Dados de demonstração
 
 Para ver o painel cheio sem cadastrar nada, suba a API com `DEMO_DATA=true` (`DEMO_DATA=true mvn spring-boot:run`). Ela gera ~45 dias de chamados fictícios e realistas (3 técnicos de velocidades diferentes, SLA cumprido e estourado, sugestões aceitas e trocadas) e usuários `ana.souza@demo.serviceflow.local`, `bruno.lima@…`, `carla.dias@…` (técnicos) e solicitantes, todos com a senha `demo1234`. Só roda uma vez (idempotente) e **nunca deve ser ativado em produção**.
@@ -295,4 +302,4 @@ GET  /health
 
 - **V1 (esta versão)**: API completa com SLA (corrido e comercial), segurança (JWT + refresh token), documentação e health checks.
 - **V2 — Python / Intelligence** *(em andamento)*: ✅ serviço FastAPI de sugestão · ✅ integração com a API Java · ✅ ciclo de feedback (taxa de aceitação, exportação e retreino) · próximos: publicação automatizada do modelo retreinado, futuramente LLM.
-- **V3 — Front-end / Analytics** *(em andamento)*: ✅ API de analytics (SLA, MTTR, volume, desempenho, série diária) · ✅ dashboard em React · próximos: telas de chamados (abrir, acompanhar, aceitar sugestão), chamados semelhantes.
+- **V3 — Front-end / Analytics** *(em andamento)*: ✅ API de analytics (SLA, MTTR, volume, desempenho, série diária) · ✅ dashboard em React · ✅ telas de chamados, categorias e SLA (com sugestão automática no modo servidor) · ✅ modo local sem servidor · próximos: chamados semelhantes, deploy público completo.

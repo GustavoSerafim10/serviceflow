@@ -9,7 +9,10 @@
                     "lint":  "oxlint",
                     "preview":  "vite preview",
                     "test":  "vitest run",
-                    "test:watch":  "vitest"
+                    "test:watch":  "vitest",
+                    "dev:local":  "vite --mode standalone",
+                    "build:local":  "tsc -b \u0026\u0026 vite build --mode standalone --base ./ --outDir dist-local",
+                    "build:embed":  "tsc -b \u0026\u0026 vite build --mode embed \u0026\u0026 node scripts/pack-embed.mjs"
                 },
     "dependencies":  {
                          "@tanstack/react-query":  "^5.103.2",

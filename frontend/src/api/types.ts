@@ -81,6 +81,90 @@ export interface TimelinePoint {
   resolved: number
 }
 
+// ------------------------------------------------------------------ chamados, categorias, SLA
+
+export type TicketStatus = 'ABERTO' | 'EM_ATENDIMENTO' | 'RESOLVIDO' | 'FECHADO' | 'CANCELADO'
+export type SlaStatus = 'DENTRO_DO_PRAZO' | 'ESTOURADO'
+export type HistoryAction = 'CREATED' | 'ASSIGNED' | 'STATUS_CHANGED' | 'COMMENT_ADDED'
+
+export interface TicketResponse {
+  id: number
+  title: string
+  description: string
+  categoryId: number
+  categoryName: string
+  priority: Priority
+  status: TicketStatus
+  requesterId: number
+  requesterName: string
+  assigneeId: number | null
+  assigneeName: string | null
+  createdAt: string
+  updatedAt: string
+  slaDueAt: string
+  resolvedAt: string | null
+  slaStatus: SlaStatus | null
+}
+
+export interface TicketFilters {
+  status?: TicketStatus
+  priority?: Priority
+  categoryId?: number
+  assigneeId?: number
+  unassigned?: boolean
+  slaStatus?: SlaStatus
+  q?: string
+}
+
+export interface PageResponse<T> {
+  content: T[]
+  page: number
+  size: number
+  totalElements: number
+  totalPages: number
+}
+
+export interface CommentResponse {
+  id: number
+  ticketId: number
+  authorId: number
+  authorName: string
+  body: string
+  createdAt: string
+}
+
+export interface HistoryResponse {
+  id: number
+  action: HistoryAction
+  details: string
+  actorId: number
+  actorName: string
+  createdAt: string
+}
+
+export interface CategoryResponse {
+  id: number
+  name: string
+  description: string | null
+  active: boolean
+  createdAt: string
+}
+
+export interface SlaRuleResponse {
+  priority: Priority
+  resolutionMinutes: number
+  businessHours: boolean
+  updatedAt: string
+}
+
+export interface SuggestionResponse {
+  available: boolean
+  suggestionId: number | null
+  modelVersion: string | null
+  category: { id: number; name: string; confidence: number } | null
+  priority: { priority: Priority; confidence: number } | null
+}
+
 export interface ModelMetrics {
   modelVersion: string
   offered: number

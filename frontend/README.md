@@ -13,15 +13,44 @@ npm run lint
 Para ver dados sem cadastrar chamados, suba a API com `DEMO_DATA=true` (ver README da raiz) e entre com
 `admin@serviceflow.local` / `Admin@12345`.
 
+## Dois modos: com servidor e local
+
+O front tem telas de **chamados** (abrir, listar com filtros, detalhe com atribuição, status, comentários e histórico),
+**categorias**, **configurações** (prazos de SLA) e o **painel de indicadores**. Elas funcionam em dois modos:
+
+| Modo | Como rodar | De onde vêm os dados |
+|------|-----------|----------------------|
+| **Servidor** (padrão) | `npm run dev` | API Java + PostgreSQL (login, papéis, sugestão automática) |
+| **Local** | `npm run dev:local` | **Neste navegador** (`localStorage`). Sem servidor, sem login, começa vazio |
+
+No modo local, um "motor" (`src/local/`) responde no lugar da API, com as **mesmas regras do backend**: prazo de SLA em
+horário comercial, fluxo de status, filtros, histórico e os mesmos indicadores (validados com o cenário calculado à mão
+do teste de integração do Java). As telas não sabem qual dos dois está por trás: `apiFetch` decide.
+
+- **Privacidade:** nada sai do navegador. Cada visitante tem os próprios dados; outro navegador ou computador começa vazio.
+- **Backup:** em Configurações → Seus dados (copiar/colar JSON), já que os dados vivem em um único navegador.
+- **Sem persistência garantida:** se o navegador bloquear o `localStorage` (janela privada, sandbox), o app avisa e continua
+  funcionando em memória.
+- **Fora do modo local:** a sugestão automática de categoria (o modelo Python não roda no navegador) e o painel de
+  qualidade das sugestões.
+- **Um usuário só:** no modo local você é quem abre e quem atende; não há permissões por papel.
+
+```bash
+npm run build:local   # site estático em dist-local/ (GitHub Pages, Netlify, qualquer hospedagem de arquivos)
+npm run build:embed   # UMA página HTML autocontida em dist-embed/pagina.html (para incorporar/publicar como artefato)
+```
+
 ## Estrutura
 
 ```
 src/
 ├── api/            client.ts (fetch + renovação de sessão), endpoints.ts, types.ts
 ├── auth/           tokenStore.ts (onde os tokens vivem), AuthContext.tsx (estado da sessão)
-├── components/     Dashboard, Kpis, PeriodFilter, ChartCard, DataTable, Login, Header
+├── local/          o "servidor no navegador": engine (regras), storage, calendar, analytics, localApi (roteador)
+├── components/     Dashboard, Kpis, PeriodFilter, ChartCard, DataTable, Login, Header, Badges
+│   ├── pages/      Tickets, NewTicket, TicketDetail, Categories, Settings
 │   └── charts/     LineChart e BarChart (SVG/HTML feitos à mão), Tooltip
-├── lib/            format, period, fold, scale: funções puras e testadas
+├── lib/            format, period, fold, scale, labels, router: funções puras e testadas
 └── styles.css      tokens de design (claro/escuro) + estilos
 ```
 
