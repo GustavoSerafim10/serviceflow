@@ -11,7 +11,7 @@ package com.gustavoserafim.serviceflow.exception;
 public class ResourceNotFoundException extends RuntimeException {
 
     public ResourceNotFoundException(String resource, Long id) {
-        super(resource + " não encontrada(o) com id " + id);
+        super(resource + " com id " + id + " não foi encontrado(a)");
     }
 
     public ResourceNotFoundException(String message) {
