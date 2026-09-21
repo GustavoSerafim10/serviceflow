@@ -3,14 +3,25 @@
 Sistema de Gestão de Chamados de TI (ITSM) — projeto de portfólio construído
 em etapas, aprendendo Java/Spring Boot na prática.
 
-## Status atual: Etapa 1 — Esqueleto conectado ao PostgreSQL
+## Status atual
 
-Nesta etapa a aplicação ainda não tem regra de negócio nenhuma. O único
-objetivo é provar que:
+| Etapa | Entrega | Situação |
+|-------|---------|----------|
+| 1 | Esqueleto Spring Boot + PostgreSQL (Docker) + Flyway | ✅ |
+| 2 | CRUD de categorias (DTOs, validação, tratamento global de erros) | ✅ |
+| 3 | Usuários, autenticação JWT e autorização por roles | 🚧 em validação |
 
-1. o projeto Maven compila e sobe com Spring Boot;
-2. a aplicação consegue conectar no PostgreSQL (via Docker Compose);
-3. o Flyway roda a primeira migration com sucesso.
+### Autenticação e autorização (Etapa 3)
+
+- Login em `POST /api/auth/login` devolve um JWT; as demais rotas exigem
+  `Authorization: Bearer <token>`.
+- Roles: `ADMIN`, `TECNICO`, `SOLICITANTE`. Senhas guardadas com BCrypt.
+- `ADMIN`: gerencia usuários (`/api/users`) e escreve em categorias.
+  Qualquer usuário autenticado lê categorias e consulta `/api/users/me`.
+- No primeiro boot, com a tabela vazia, é criado um `ADMIN` inicial
+  (`admin@serviceflow.local` / `Admin@12345` por padrão).
+  **Em qualquer ambiente real, defina `ADMIN_EMAIL`, `ADMIN_PASSWORD` e
+  `JWT_SECRET` como variáveis de ambiente.**
 
 ## Stack (Fase 1 — só Java)
 
@@ -20,7 +31,8 @@ objetivo é provar que:
 - PostgreSQL
 - Flyway
 - Bean Validation
-- Lombok (a partir da Etapa 2)
+- Spring Security + JWT (JJWT)
+- Lombok
 - JUnit 5 + Mockito
 - Docker / Docker Compose
 

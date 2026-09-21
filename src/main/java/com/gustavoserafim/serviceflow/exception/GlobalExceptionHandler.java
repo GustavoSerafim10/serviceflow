@@ -3,11 +3,18 @@ package com.gustavoserafim.serviceflow.exception;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -23,9 +30,14 @@ import java.util.Map;
  *
  * O formato é ProblemDetail (RFC 7807 / 9457), padrão nativo do Spring 6:
  * { "type", "title", "status", "detail", "instance", ...extras }.
+ *
+ * Estende ResponseEntityExceptionHandler, que já trata em ProblemDetail as
+ * exceções padrão do Spring MVC (JSON malformado -> 400, método HTTP errado
+ * -> 405, Content-Type errado -> 415...). Sem isso, o handler genérico
+ * (Exception.class) abaixo transformaria todas elas em 500.
  */
 @RestControllerAdvice
-public class GlobalExceptionHandler {
+public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
@@ -54,9 +66,34 @@ public class GlobalExceptionHandler {
         return problem;
     }
 
-    // Disparada pelo @Valid quando o DTO de entrada é inválido.
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ProblemDetail handleValidation(MethodArgumentNotValidException ex) {
+    // Login com senha errada / usuário inexistente / usuário desativado.
+    // Mensagem única e genérica de propósito: não revelar QUAL dos dois falhou
+    // (evita que alguém descubra quais e-mails existem no sistema).
+    @ExceptionHandler(AuthenticationException.class)
+    public ProblemDetail handleAuthentication(AuthenticationException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.UNAUTHORIZED, "Credenciais inválidas");
+        problem.setTitle("Não autenticado");
+        return problem;
+    }
+
+    // Lançada pelo @PreAuthorize quando o usuário logado não tem a role exigida.
+    // Precisa ser tratada aqui: sem este método, cairia no handler genérico (500).
+    @ExceptionHandler(AccessDeniedException.class)
+    public ProblemDetail handleAccessDenied(AccessDeniedException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.FORBIDDEN, "Você não tem permissão para acessar este recurso");
+        problem.setTitle("Acesso negado");
+        return problem;
+    }
+
+    // Disparada pelo @Valid quando o DTO de entrada é inválido. Sobrescreve o
+    // comportamento padrão da classe-pai para incluir o mapa campo -> mensagem.
+    @Override
+    protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex,
+                                                                  HttpHeaders headers,
+                                                                  HttpStatusCode status,
+                                                                  WebRequest request) {
         Map<String, String> errors = new LinkedHashMap<>();
         ex.getBindingResult().getFieldErrors()
                 .forEach(error -> errors.putIfAbsent(error.getField(), error.getDefaultMessage()));
@@ -65,7 +102,7 @@ public class GlobalExceptionHandler {
                 HttpStatus.BAD_REQUEST, "Um ou mais campos são inválidos");
         problem.setTitle("Erro de validação");
         problem.setProperty("errors", errors);
-        return problem;
+        return handleExceptionInternal(ex, problem, headers, status, request);
     }
 
     // Último recurso: erro inesperado. Registra o detalhe no log, mas NÃO o

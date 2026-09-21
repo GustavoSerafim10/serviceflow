@@ -25,3 +25,18 @@ spring:
 
 server:
   port: 8080
+
+# Configurações próprias do ServiceFlow. A sintaxe ${VAR:padrão} lê a variável
+# de ambiente VAR e, se ela não existir, usa o valor padrão (bom para dev).
+# EM PRODUÇÃO: defina JWT_SECRET, ADMIN_EMAIL e ADMIN_PASSWORD no ambiente;
+# os padrões abaixo são públicos (estão no GitHub) e NÃO são seguros.
+app:
+  jwt:
+    # Chave HMAC em Base64 (mínimo 256 bits). Quem tem esta chave forja tokens.
+    secret: ${JWT_SECRET:c2VydmljZWZsb3ctZGV2LW9ubHktc2VjcmV0LWNoYW5nZS1tZS1pbi1wcm9kdWN0aW9uLTAxMjM0NTY3ODk=}
+    expiration-minutes: 60
+  # Primeiro ADMIN, criado na subida SÓ se a tabela de usuários estiver vazia.
+  bootstrap-admin:
+    name: Administrador
+    email: ${ADMIN_EMAIL:admin@serviceflow.local}
+    password: ${ADMIN_PASSWORD:Admin@12345}
