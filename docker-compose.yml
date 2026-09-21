@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: serviceflow-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: serviceflow
+      POSTGRES_USER: serviceflow
+      POSTGRES_PASSWORD: serviceflow
+    ports:
+      - "5432:5432"
+    volumes:
+      - serviceflow_pgdata:/var/lib/postgresql/data
+
+volumes:
+  serviceflow_pgdata:
