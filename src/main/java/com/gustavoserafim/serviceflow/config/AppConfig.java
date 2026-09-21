@@ -1,5 +1,6 @@
 package com.gustavoserafim.serviceflow.config;
 
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -9,6 +10,7 @@ import java.time.Clock;
 
 @Configuration
 @EnableScheduling // habilita métodos @Scheduled (ex: limpeza diária de refresh tokens expirados)
+@EnableConfigurationProperties(BusinessHoursProperties.class) // registra o record como bean, preenchido do application.yml
 public class AppConfig {
 
     /**

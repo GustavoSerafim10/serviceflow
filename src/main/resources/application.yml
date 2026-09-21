@@ -53,6 +53,15 @@ app:
     # Access token curto (se vazar, vale pouco); a sessão é renovada pelo refresh token.
     expiration-minutes: 15
     refresh-expiration-days: 7
+  # Calendário usado pelas regras de SLA marcadas como "horário comercial".
+  sla:
+    business-hours:
+      zone: America/Sao_Paulo
+      start: "08:00"
+      end: "18:00"
+      days: MONDAY,TUESDAY,WEDNESDAY,THURSDAY,FRIDAY
+      # Feriados (datas em que não há expediente), por exemplo:
+      # holidays: 2026-12-25, 2027-01-01
   # Primeiro ADMIN, criado na subida SÓ se a tabela de usuários estiver vazia.
   bootstrap-admin:
     name: Administrador

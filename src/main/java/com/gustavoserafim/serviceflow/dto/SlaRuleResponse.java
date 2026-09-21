@@ -8,10 +8,12 @@ import java.time.Instant;
 public record SlaRuleResponse(
         Priority priority,
         int resolutionMinutes,
+        boolean businessHours,
         Instant updatedAt
 ) {
 
     public static SlaRuleResponse from(SlaRule rule) {
-        return new SlaRuleResponse(rule.getPriority(), rule.getResolutionMinutes(), rule.getUpdatedAt());
+        return new SlaRuleResponse(rule.getPriority(), rule.getResolutionMinutes(),
+                rule.isBusinessHours(), rule.getUpdatedAt());
     }
 }

@@ -105,8 +105,9 @@ public class TicketService {
         ticket.setPriority(request.priority());
         ticket.setStatus(TicketStatus.ABERTO);
         ticket.setCreatedAt(now);
-        // Cálculo automático do SLA: abertura + minutos da regra da prioridade.
-        ticket.setSlaDueAt(SlaCalculator.dueAt(now, slaRuleService.minutesFor(request.priority())));
+        // Cálculo automático do SLA: abertura + prazo da regra da prioridade
+        // (em tempo corrido ou só em horas úteis, conforme a regra).
+        ticket.setSlaDueAt(slaRuleService.dueAtFor(request.priority(), now));
 
         ticketRepository.save(ticket);
         record(ticket, actor, HistoryAction.CREATED,

@@ -121,7 +121,7 @@ class TicketServiceTest {
     void create_setsRequesterStatusAndSlaDeadlineFromRule() {
         when(currentUser.get()).thenReturn(requester);
         when(categoryRepository.findById(10L)).thenReturn(Optional.of(category));
-        when(slaRuleService.minutesFor(Priority.P1)).thenReturn(240);
+        when(slaRuleService.dueAtFor(Priority.P1, NOW)).thenReturn(NOW.plusSeconds(240 * 60));
 
         TicketResponse response = service.create(
                 new TicketCreateRequest("  Sem rede  ", "Sem conexão", 10L, Priority.P1));

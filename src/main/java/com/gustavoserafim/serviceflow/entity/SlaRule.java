@@ -35,6 +35,11 @@ public class SlaRule {
     @Column(name = "resolution_minutes", nullable = false)
     private int resolutionMinutes;
 
+    // true: os minutos contam só dentro do expediente (ver BusinessCalendar);
+    // false: tempo corrido, 24x7.
+    @Column(name = "business_hours", nullable = false)
+    private boolean businessHours;
+
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
