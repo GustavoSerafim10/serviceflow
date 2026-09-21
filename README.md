@@ -189,8 +189,38 @@ mvn test
 - **Ordenação não configurável pelo cliente** na listagem, evitando inferência de dados por ordenação em campos aninhados.
 - **Histórico só-inserção**, gravado na mesma transação da ação que o originou.
 
+## Intelligence — V2 (em andamento)
+
+Microsserviço **Python (FastAPI + scikit-learn)** em [`intelligence/`](intelligence/) que sugere **categoria e prioridade** de um chamado a partir do título e da descrição. Roda de forma independente; a integração com a API Java (sugestão ao abrir o chamado) é a próxima etapa.
+
+```bash
+cd intelligence
+python -m venv .venv && .venv\Scripts\activate      # Linux/macOS: source .venv/bin/activate
+pip install -r requirements-dev.txt
+python -m app.train                                  # treina e mostra as métricas de validação cruzada
+uvicorn app.main:app --reload                        # http://localhost:8000/docs
+pytest                                               # testes
+```
+
+Ou pelo Docker (o modelo é treinado durante o build): `docker compose --profile app up --build`.
+
+```
+POST /v1/suggestions   {"title": "...", "description": "..."}
+→ { "category": {"label": "Impressora", "confidence": 0.91, "alternatives": [...]},
+    "priority": {"label": "P3", "confidence": 0.66, "alternatives": [...]},
+    "modelVersion": "v1-ad34633d" }
+GET  /health
+```
+
+**Como funciona:** TF-IDF sobre n-gramas de caracteres + regressão logística, um modelo para categoria e outro para prioridade; a confiança é a probabilidade do rótulo. O treino (`app/train.py`) avalia com validação cruzada em dados não vistos e salva o modelo versionado pelo hash do dataset.
+
+**Limites conhecidos (importante):**
+- O dataset inicial (`data/tickets.csv`) tem **108 chamados escritos à mão**. Em validação cruzada: **~73% de acurácia na categoria** (acaso ≈ 17%) e **~57–60% na prioridade** (chute "sempre P4" ≈ 32%). É suficiente para demonstrar o pipeline, **não para produção**: o ganho real virá de chamados históricos reais.
+- A prioridade é inerentemente mais difícil de inferir só pelo texto (depende de impacto, quantidade de usuários afetados, contexto). Trate-a como **sugestão** com a confiança exibida, nunca como decisão automática.
+- O serviço ainda não tem autenticação: é interno e não deve ser exposto publicamente.
+
 ## Roadmap
 
 - **V1 (esta versão)**: API completa com SLA (corrido e comercial), segurança (JWT + refresh token), documentação e health checks.
-- **V2 — Python / Intelligence**: FastAPI, sugestão de categoria e prioridade, classificação de chamados.
+- **V2 — Python / Intelligence** *(em andamento)*: ✅ serviço FastAPI de sugestão de categoria e prioridade · próximos: integração com a API Java, feedback do usuário para melhorar o modelo, futuramente LLM.
 - **V3 — Front-end / Analytics**: React, dashboard, indicadores de SLA, MTTR, volume por categoria, chamados semelhantes.

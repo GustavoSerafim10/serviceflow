@@ -1,0 +1,5 @@
+# Dependências de execução (versões fixas = build reproduzível; as testadas no desenvolvimento).
+# numpy, scipy, joblib e pydantic entram como dependências dessas.
+fastapi==0.141.1
+uvicorn==0.53.0
+scikit-learn==1.9.1

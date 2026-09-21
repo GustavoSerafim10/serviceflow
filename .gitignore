@@ -17,6 +17,13 @@ target/
 ### macOS / OS ###
 .DS_Store
 
+### Python (intelligence/) ###
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+intelligence/models/
+
 ### Logs e ambiente ###
 *.log
 .env

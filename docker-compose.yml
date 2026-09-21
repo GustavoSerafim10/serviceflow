@@ -49,5 +49,22 @@ services:
       retries: 5
       start_period: 40s
 
+  # Microsserviço Python (V2): sugere categoria e prioridade. Ainda não é chamado
+  # pela API Java; roda de forma independente em http://localhost:8000/docs
+  intelligence:
+    profiles: ["app"]
+    build: ./intelligence
+    container_name: serviceflow-intelligence
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    healthcheck:
+      # A imagem slim não tem curl; usamos o próprio Python.
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 15s
+
 volumes:
   serviceflow_pgdata:

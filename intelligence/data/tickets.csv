@@ -1,0 +1,109 @@
+title,description,category,priority
+Sem internet em todo o setor,Ninguém do financeiro consegue acessar a internet desde cedo,Rede,P1
+Rede caiu no prédio inteiro,Todos os andares estão sem conexão e o atendimento parou,Rede,P1
+VPN não conecta,Não consigo conectar na VPN para trabalhar de casa,Rede,P2
+Wi-Fi muito lento,A conexão wifi da sala de reuniões está lenta e cai toda hora,Rede,P3
+Ponto de rede sem sinal,O cabo de rede da minha mesa não está dando link,Rede,P3
+Internet oscilando,A internet cai e volta várias vezes durante o dia,Rede,P3
+Solicitar liberação de site,Preciso que liberem o acesso ao site do fornecedor no firewall,Rede,P4
+Novo ponto de rede,Solicito instalação de um ponto de rede para a nova estação de trabalho,Rede,P4
+Sem acesso ao servidor de arquivos,Não consigo acessar as pastas compartilhadas na rede,Rede,P2
+Wi-Fi de visitantes não funciona,A rede de visitantes não gera senha para os convidados,Rede,P4
+Firewall bloqueando sistema,O firewall está bloqueando o acesso ao sistema de vendas para toda a loja,Rede,P1
+Latência alta na conexão,O ping para o servidor está muito alto e o sistema trava,Rede,P2
+Cabo de rede rompido,O cabo da impressora de etiquetas foi cortado e perdeu conexão,Rede,P3
+Sem IP na máquina,O computador não obtém endereço IP e fica sem rede,Rede,P2
+Dúvida sobre Wi-Fi,Qual o nome e a senha da rede wifi corporativa,Rede,P4
+Switch com defeito,O switch do andar está piscando erro e vários pontos ficaram sem rede,Rede,P1
+Conexão remota lenta,O acesso remoto ao desktop está muito lento,Rede,P3
+Domínio interno não resolve,Os sites internos não abrem pelo nome apenas pelo IP,Rede,P2
+Computador não liga,Meu computador não liga mais nem aparece luz na fonte,Hardware,P2
+Notebook com tela quebrada,Caiu e a tela do notebook trincou totalmente,Hardware,P3
+Servidor de produção desligou,O servidor principal desligou sozinho e o sistema está fora do ar,Hardware,P1
+Teclado com teclas falhando,Algumas teclas do teclado não funcionam,Hardware,P4
+Mouse não funciona,O mouse parou de responder e preciso de outro,Hardware,P4
+Monitor sem imagem,O monitor fica preto e não mostra imagem,Hardware,P3
+Computador reiniciando sozinho,A máquina reinicia sozinha várias vezes por dia e perco meu trabalho,Hardware,P2
+HD com barulho estranho,O disco rígido está fazendo barulho de clique e temo perder os dados,Hardware,P2
+Solicitar segundo monitor,Preciso de um segundo monitor para trabalhar com planilhas,Hardware,P4
+Bateria do notebook não carrega,O notebook só funciona ligado na tomada e a bateria não segura carga,Hardware,P3
+Memória insuficiente,O computador está muito lento e acredito que precisa de mais memória RAM,Hardware,P3
+Fonte de alimentação queimou,Cheiro de queimado e o computador do caixa desligou,Hardware,P1
+Headset sem áudio,O fone de ouvido não emite som nas reuniões,Hardware,P4
+Webcam não detectada,A câmera do notebook não é reconhecida nas videochamadas,Hardware,P3
+Nobreak apitando,O nobreak da sala de servidores está apitando e alertando falha,Hardware,P1
+Novo notebook para colaborador,Solicito notebook para o funcionário que entra na segunda,Hardware,P3
+Superaquecimento,O computador está esquentando demais e a ventoinha fica muito alta,Hardware,P3
+Trocar cabo HDMI,Preciso de um cabo HDMI novo para a sala de reunião,Hardware,P4
+Sistema ERP fora do ar,O ERP não abre para nenhum usuário da empresa,Software,P1
+Erro ao abrir planilha,O Excel trava e fecha ao abrir a planilha de vendas,Software,P3
+Instalar programa,Preciso instalar o Photoshop no meu computador,Software,P4
+Sistema de vendas com erro,Ao finalizar a venda o sistema exibe erro e não emite a nota para todos os caixas,Software,P1
+Licença do Office expirada,Aparece aviso de produto não licenciado no Word,Software,P3
+Atualização do Windows falhou,A atualização do Windows não conclui e o computador volta ao estado anterior,Software,P3
+Antivírus detectou ameaça,O antivírus acusou um vírus em arquivos do meu computador,Software,P2
+Aplicativo trava constantemente,O sistema financeiro trava toda vez que gero o relatório mensal,Software,P2
+Dúvida sobre função do sistema,Como faço para exportar o relatório em PDF no sistema,Software,P4
+Erro de banco de dados no sistema,O sistema retorna erro de conexão com o banco e ninguém consegue lançar pedidos,Software,P1
+Navegador não abre página,O Chrome fecha sozinho ao acessar o portal,Software,P3
+Atualizar versão do sistema,Solicito atualização do sistema de RH para a versão nova,Software,P4
+Sistema lento,O sistema de estoque demora mais de um minuto para abrir cada tela,Software,P2
+Backup falhou,O backup noturno dos sistemas não foi concluído e precisa de verificação,Software,P2
+Solicitar novo relatório,Gostaria de um novo relatório de vendas por região no sistema,Software,P4
+Programa não instala,O instalador do sistema de contabilidade retorna erro e não finaliza,Software,P3
+Tela azul no Windows,Aparece tela azul ao abrir o sistema e o computador reinicia,Software,P2
+Remover programa,Preciso desinstalar um software que não uso mais,Software,P4
+Esqueci minha senha,Não lembro a senha do meu usuário do computador,Acesso e Senha,P3
+Conta bloqueada,Errei a senha algumas vezes e minha conta foi bloqueada,Acesso e Senha,P2
+Solicitar acesso ao sistema,Preciso de acesso ao sistema financeiro para o novo cargo,Acesso e Senha,P4
+Novo colaborador precisa de usuário,Criar usuário e senha para o funcionário que começa na segunda,Acesso e Senha,P3
+Senha expirada,O sistema pede para trocar a senha mas o link não funciona,Acesso e Senha,P3
+Ninguém consegue logar,Nenhum usuário consegue fazer login no sistema desde a manhã,Acesso e Senha,P1
+Acesso à pasta compartilhada,Solicito permissão de acesso à pasta do departamento jurídico,Acesso e Senha,P4
+Autenticação em dois fatores,Perdi o celular e não recebo o código de verificação para entrar,Acesso e Senha,P2
+Desligamento de colaborador,Remover todos os acessos do funcionário desligado hoje,Acesso e Senha,P2
+Redefinir senha do sistema,Preciso redefinir a senha do portal do cliente,Acesso e Senha,P3
+Login não funciona,Meu login e senha estão corretos mas o sistema diz que são inválidos,Acesso e Senha,P2
+Alterar permissão de perfil,Quero mudar meu perfil de acesso de leitura para edição,Acesso e Senha,P4
+Acesso negado ao servidor,Aparece acesso negado quando tento abrir o servidor de arquivos,Acesso e Senha,P3
+Toda a equipe bloqueada,Todos da equipe de suporte estão com a conta bloqueada e não conseguem atender,Acesso e Senha,P1
+Dúvida sobre política de senha,Quais são as regras para criar uma senha forte,Acesso e Senha,P4
+Cadastro de biometria,Preciso cadastrar minha digital para entrar no sistema de ponto,Acesso e Senha,P4
+Token de acesso vencido,O token do banco venceu e não consigo fazer pagamentos,Acesso e Senha,P2
+Criar acesso temporário,Preciso de acesso temporário para um prestador de serviço,Acesso e Senha,P4
+E-mail não envia,Não consigo enviar mensagens no Outlook e elas ficam na caixa de saída,E-mail,P3
+Servidor de e-mail fora do ar,Ninguém da empresa está recebendo nem enviando e-mails,E-mail,P1
+Caixa de entrada cheia,Minha caixa de e-mail está cheia e não recebo novas mensagens,E-mail,P3
+Criar conta de e-mail,Solicito criação de e-mail corporativo para novo funcionário,E-mail,P4
+Recebendo muito spam,Estou recebendo muitos e-mails de propaganda e golpes,E-mail,P3
+Outlook não abre,O Outlook trava na tela de carregamento e não abre,E-mail,P2
+Configurar e-mail no celular,Preciso configurar meu e-mail corporativo no telefone,E-mail,P4
+E-mails voltando,As mensagens que envio para um cliente retornam com erro de entrega,E-mail,P2
+Lista de distribuição,Adicionar uma pessoa na lista de e-mail do departamento comercial,E-mail,P4
+Calendário não sincroniza,Os compromissos do calendário não aparecem no celular,E-mail,P3
+Anexo não abre,Não consigo abrir o anexo que recebi por e-mail,E-mail,P4
+E-mail de phishing,Recebi um e-mail suspeito pedindo minha senha e vários colegas também,E-mail,P2
+Assinatura de e-mail,Preciso atualizar a assinatura padrão do meu e-mail,E-mail,P4
+Diretoria sem e-mail,O e-mail de toda a diretoria parou de funcionar antes da reunião importante,E-mail,P1
+Recuperar e-mail apagado,Apaguei sem querer mensagens importantes e preciso recuperar,E-mail,P3
+Limite de tamanho de anexo,Não consigo enviar um arquivo grande por e-mail,E-mail,P4
+Resposta automática,Como configuro a resposta automática de férias,E-mail,P4
+E-mail lento,O envio e recebimento de mensagens está demorando muito,E-mail,P3
+Impressora não imprime,A impressora do setor não imprime nada e fica na fila,Impressora,P3
+Papel enroscando,A impressora está com papel atolado toda hora,Impressora,P4
+Toner acabou,O toner da impressora acabou e precisa de reposição,Impressora,P4
+Impressora fiscal parada,A impressora fiscal do caixa parou e a loja não consegue emitir cupons,Impressora,P1
+Impressão com manchas,As folhas saem borradas e com listras pretas,Impressora,P4
+Instalar impressora,Preciso instalar a impressora nova no meu computador,Impressora,P4
+Scanner não funciona,O scanner da multifuncional não envia os documentos para o e-mail,Impressora,P3
+Impressora offline,A impressora aparece offline no computador mas está ligada,Impressora,P3
+Impressora de etiquetas parada,A impressora de etiquetas da expedição parou e não conseguimos despachar pedidos,Impressora,P1
+Sem acesso à impressora de rede,Não consigo imprimir na impressora do andar de cima,Impressora,P3
+Impressão frente e verso,Como faço para imprimir frente e verso,Impressora,P4
+Impressora com barulho,A impressora faz um barulho alto ao puxar o papel,Impressora,P4
+Fila de impressão travada,Um documento travou a fila e ninguém do departamento consegue imprimir,Impressora,P2
+Trocar cilindro,A impressora indica que o cilindro precisa ser trocado,Impressora,P4
+Impressão em branco,A impressora puxa a folha mas ela sai completamente em branco,Impressora,P3
+Impressora do RH sem imprimir,Preciso imprimir contratos hoje e a impressora do RH não funciona,Impressora,P2
+Driver da impressora,Aparece erro de driver ao tentar imprimir,Impressora,P3
+Solicitar impressora colorida,Gostaria de uma impressora colorida para o departamento de marketing,Impressora,P4
