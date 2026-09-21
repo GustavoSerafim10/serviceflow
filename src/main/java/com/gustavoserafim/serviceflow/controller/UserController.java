@@ -1,9 +1,12 @@
 package com.gustavoserafim.serviceflow.controller;
 
+import com.gustavoserafim.serviceflow.dto.ChangePasswordRequest;
+import com.gustavoserafim.serviceflow.dto.ResetPasswordRequest;
 import com.gustavoserafim.serviceflow.dto.UserCreateRequest;
 import com.gustavoserafim.serviceflow.dto.UserResponse;
 import com.gustavoserafim.serviceflow.dto.UserUpdateRequest;
 import com.gustavoserafim.serviceflow.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -45,6 +48,26 @@ public class UserController {
     @PreAuthorize("isAuthenticated()")
     public UserResponse me(Authentication authentication) {
         return userService.findByEmail(authentication.getName());
+    }
+
+    @PostMapping("/me/password")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Troca a própria senha",
+            description = "Exige a senha atual. Ao concluir, todas as sessões do usuário são encerradas: "
+                    + "é preciso fazer login novamente.")
+    public ResponseEntity<Void> changeOwnPassword(Authentication authentication,
+                                                  @Valid @RequestBody ChangePasswordRequest request) {
+        userService.changeOwnPassword(authentication.getName(), request);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/{id}/password")
+    @Operation(summary = "ADMIN redefine a senha de um usuário",
+            description = "Encerra todas as sessões do usuário afetado.")
+    public ResponseEntity<Void> resetPassword(@PathVariable Long id,
+                                              @Valid @RequestBody ResetPasswordRequest request) {
+        userService.resetPassword(id, request);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping

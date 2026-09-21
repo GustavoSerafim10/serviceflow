@@ -8,8 +8,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Teste unitário puro (sem Spring): o JwtService recebe tudo pelo construtor,
- * então basta instanciá-lo. Cobre os três comportamentos que importam:
- * ida-e-volta, token expirado e token adulterado.
+ * então basta instanciá-lo. Cobre: ida-e-volta, versão do token, token
+ * expirado, adulterado e assinado por outra chave.
  */
 class JwtServiceTest {
 
@@ -18,28 +18,29 @@ class JwtServiceTest {
             "c2VydmljZWZsb3ctZGV2LW9ubHktc2VjcmV0LWNoYW5nZS1tZS1pbi1wcm9kdWN0aW9uLTAxMjM0NTY3ODk=";
 
     @Test
-    void generateToken_thenExtractSubject_returnsSameSubject() {
-        JwtService jwtService = new JwtService(SECRET, 60);
+    void generateToken_thenParse_returnsSameSubjectAndVersion() {
+        JwtService jwtService = new JwtService(SECRET, 15);
 
-        String token = jwtService.generateToken("ana@empresa.com");
+        String token = jwtService.generateToken("ana@empresa.com", 3);
+        JwtService.TokenClaims claims = jwtService.parse(token);
 
-        assertThat(jwtService.extractSubject(token)).isEqualTo("ana@empresa.com");
+        assertThat(claims.subject()).isEqualTo("ana@empresa.com");
+        assertThat(claims.tokenVersion()).isEqualTo(3);
     }
 
     @Test
-    void extractSubject_withExpiredToken_throwsJwtException() {
+    void parse_withExpiredToken_throwsJwtException() {
         // Expiração negativa = token já nasce vencido.
         JwtService jwtService = new JwtService(SECRET, -1);
-        String token = jwtService.generateToken("ana@empresa.com");
+        String token = jwtService.generateToken("ana@empresa.com", 0);
 
-        assertThatThrownBy(() -> jwtService.extractSubject(token))
-                .isInstanceOf(JwtException.class);
+        assertThatThrownBy(() -> jwtService.parse(token)).isInstanceOf(JwtException.class);
     }
 
     @Test
-    void extractSubject_withTamperedToken_throwsJwtException() {
-        JwtService jwtService = new JwtService(SECRET, 60);
-        String token = jwtService.generateToken("ana@empresa.com");
+    void parse_withTamperedToken_throwsJwtException() {
+        JwtService jwtService = new JwtService(SECRET, 15);
+        String token = jwtService.generateToken("ana@empresa.com", 0);
 
         // Troca o PRIMEIRO caractere da assinatura (a parte após o último ponto).
         // Não o último: em Base64 o último caractere pode conter bits de
@@ -50,18 +51,16 @@ class JwtServiceTest {
                 + (first == 'A' ? 'B' : 'A')
                 + token.substring(signatureStart + 1);
 
-        assertThatThrownBy(() -> jwtService.extractSubject(tampered))
-                .isInstanceOf(JwtException.class);
+        assertThatThrownBy(() -> jwtService.parse(tampered)).isInstanceOf(JwtException.class);
     }
 
     @Test
-    void extractSubject_withTokenSignedByAnotherKey_throwsJwtException() {
+    void parse_withTokenSignedByAnotherKey_throwsJwtException() {
         String otherSecret = "b3V0cmEtY2hhdmUtc2VjcmV0YS1kaWZlcmVudGUtZG8tc2VydmljZWZsb3ctMDEyMzQ1Njc4OQ==";
-        String token = new JwtService(otherSecret, 60).generateToken("ana@empresa.com");
+        String token = new JwtService(otherSecret, 15).generateToken("ana@empresa.com", 0);
 
-        JwtService jwtService = new JwtService(SECRET, 60);
+        JwtService jwtService = new JwtService(SECRET, 15);
 
-        assertThatThrownBy(() -> jwtService.extractSubject(token))
-                .isInstanceOf(JwtException.class);
+        assertThatThrownBy(() -> jwtService.parse(token)).isInstanceOf(JwtException.class);
     }
 }

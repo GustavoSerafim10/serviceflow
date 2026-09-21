@@ -54,6 +54,11 @@ public class User {
     @Column(nullable = false)
     private boolean active = true;
 
+    // Versão dos tokens deste usuário. Sobe a cada evento que deve encerrar as
+    // sessões (troca de senha etc.); tokens emitidos com versão menor são rejeitados.
+    @Column(name = "token_version", nullable = false)
+    private int tokenVersion;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 

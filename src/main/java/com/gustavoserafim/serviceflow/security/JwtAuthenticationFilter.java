@@ -55,11 +55,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 && SecurityContextHolder.getContext().getAuthentication() == null) {
             String token = header.substring(BEARER_PREFIX.length());
             try {
-                String email = jwtService.extractSubject(token);
-                UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+                JwtService.TokenClaims claims = jwtService.parse(token);
+                UserDetails userDetails = userDetailsService.loadUserByUsername(claims.subject());
 
-                // Usuário desativado com token ainda válido: não autentica.
-                if (userDetails.isEnabled()) {
+                // Só autentica se o usuário estiver ativo E o token tiver a versão
+                // vigente: troca de senha ou reuso de refresh token sobem a versão
+                // e derrubam todos os tokens anteriores.
+                if (userDetails.isEnabled()
+                        && userDetails instanceof AppUserDetails appUser
+                        && appUser.getTokenVersion() == claims.tokenVersion()) {
                     UsernamePasswordAuthenticationToken authentication =
                             UsernamePasswordAuthenticationToken.authenticated(
                                     userDetails, null, userDetails.getAuthorities());

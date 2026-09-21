@@ -2,6 +2,7 @@ package com.gustavoserafim.serviceflow.service;
 
 import com.gustavoserafim.serviceflow.dto.LoginRequest;
 import com.gustavoserafim.serviceflow.dto.LoginResponse;
+import com.gustavoserafim.serviceflow.security.AppUserDetails;
 import com.gustavoserafim.serviceflow.security.JwtService;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -30,7 +31,8 @@ public class AuthService {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.email().trim(), request.password()));
 
-        String token = jwtService.generateToken(authentication.getName());
+        AppUserDetails principal = (AppUserDetails) authentication.getPrincipal();
+        String token = jwtService.generateToken(principal.getUsername(), principal.getTokenVersion());
         return new LoginResponse(token, "Bearer", jwtService.getExpirationSeconds());
     }
 }

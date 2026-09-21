@@ -1,9 +1,12 @@
 package com.gustavoserafim.serviceflow.service;
 
+import com.gustavoserafim.serviceflow.dto.ChangePasswordRequest;
+import com.gustavoserafim.serviceflow.dto.ResetPasswordRequest;
 import com.gustavoserafim.serviceflow.dto.UserCreateRequest;
 import com.gustavoserafim.serviceflow.dto.UserResponse;
 import com.gustavoserafim.serviceflow.dto.UserUpdateRequest;
 import com.gustavoserafim.serviceflow.entity.User;
+import com.gustavoserafim.serviceflow.exception.BusinessRuleException;
 import com.gustavoserafim.serviceflow.exception.ConflictException;
 import com.gustavoserafim.serviceflow.exception.ResourceNotFoundException;
 import com.gustavoserafim.serviceflow.repository.UserRepository;
@@ -79,6 +82,33 @@ public class UserService {
     @Transactional
     public void deactivate(Long id) {
         getOrThrow(id).setActive(false);
+    }
+
+    /** O próprio usuário troca a senha, confirmando a atual. Encerra todas as sessões. */
+    @Transactional
+    public void changeOwnPassword(String email, ChangePasswordRequest request) {
+        User user = userRepository.findByEmailIgnoreCase(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário autenticado não encontrado"));
+
+        if (!passwordEncoder.matches(request.currentPassword(), user.getPasswordHash())) {
+            throw new BusinessRuleException("A senha atual está incorreta");
+        }
+        if (passwordEncoder.matches(request.newPassword(), user.getPasswordHash())) {
+            throw new BusinessRuleException("A nova senha deve ser diferente da atual");
+        }
+        applyNewPassword(user, request.newPassword());
+    }
+
+    /** O ADMIN define uma nova senha para qualquer usuário. Encerra todas as sessões dele. */
+    @Transactional
+    public void resetPassword(Long id, ResetPasswordRequest request) {
+        applyNewPassword(getOrThrow(id), request.newPassword());
+    }
+
+    private void applyNewPassword(User user, String rawPassword) {
+        user.setPasswordHash(passwordEncoder.encode(rawPassword));
+        // Subir a versão invalida todos os JWTs já emitidos para este usuário.
+        user.setTokenVersion(user.getTokenVersion() + 1);
     }
 
     private User getOrThrow(Long id) {
