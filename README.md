@@ -17,6 +17,7 @@ Projeto de portfólio desenvolvido em etapas, com foco em arquitetura em camadas
 - **Swagger UI**, tratamento global de erros (RFC 7807), migrations versionadas
 - **Health checks** (Actuator: liveness/readiness) e healthcheck no Docker
 - **Sugestão automática de categoria e prioridade** (serviço Python) durante o preenchimento do chamado, com degradação elegante se o serviço estiver fora do ar
+- **Analytics operacional** (ADMIN/TECNICO): conformidade de SLA, MTTR (média e mediana), volume por categoria/prioridade, desempenho por técnico e série diária
 - **Categorias padrão** já cadastradas (Rede, Hardware, Software, Acesso e Senha, E-mail, Impressora)
 
 ## Stack
@@ -152,6 +153,7 @@ Ajustes finos (no `application.yml`): `app.jwt.expiration-minutes` (access token
 | POST · PUT · DELETE | `/api/categories[/{id}]` | ADMIN |
 | GET | `/api/sla-rules` | autenticado |
 | PUT | `/api/sla-rules/{priority}` (`resolutionMinutes`, `businessHours`) | ADMIN |
+| GET | `/api/analytics/summary` · `/by-category` · `/by-priority` · `/by-technician` · `/timeline` | ADMIN, TECNICO |
 | GET | `/actuator/health[/liveness\|/readiness]` | público |
 | POST · GET | `/api/tickets` | autenticado (GET filtra por visibilidade) |
 | POST | `/api/tickets/suggestions` (sugere categoria e prioridade; devolve `suggestionId`) | autenticado |
@@ -193,6 +195,20 @@ mvn test
 - **`Clock` injetável**: o tempo é dependência, o que torna os prazos de SLA testáveis de forma determinística.
 - **Ordenação não configurável pelo cliente** na listagem, evitando inferência de dados por ordenação em campos aninhados.
 - **Histórico só-inserção**, gravado na mesma transação da ação que o originou.
+
+## Analytics (base do dashboard da V3)
+
+Indicadores calculados **no banco** (SQL nativo do PostgreSQL: `COUNT(*) FILTER`, `percentile_cont`, `generate_series`), acessíveis a ADMIN e TECNICO. Todos aceitam `?from=AAAA-MM-DD&to=AAAA-MM-DD` (inclusivos, no fuso da empresa); sem parâmetros, os últimos 30 dias; máximo de 366.
+
+| Endpoint | Conteúdo |
+|----------|----------|
+| `/api/analytics/summary` | abertos, resolvidos, taxa de SLA cumprido, **MTTR** (média e mediana, em minutos) e o retrato de agora (por status e quantos abertos já estouraram o SLA) |
+| `/api/analytics/by-category` | volume, SLA e MTTR por categoria |
+| `/api/analytics/by-priority` | o mesmo por prioridade (sempre P1 a P4, as sem movimento zeradas) |
+| `/api/analytics/by-technician` | resolvidos, SLA, MTTR e chamados em atendimento por técnico |
+| `/api/analytics/timeline` | abertos e resolvidos por dia (todos os dias do período, inclusive os vazios) |
+
+**Regras de medição:** cancelados nunca entram. *Volume* usa a data de **abertura**; *MTTR e conformidade de SLA* usam a data de **resolução** (só se mede o tempo de quem foi resolvido no período). "Dentro do SLA" = resolvido até o prazo gravado. Tempos em minutos; taxas de 0 a 1, `null` quando não há base de cálculo (o painel mostra "—", não um enganoso 0%). O MTTR é em **tempo corrido**, mesmo para prioridades cujo prazo conta só horas úteis. Chamados reatribuídos contam para o técnico atual.
 
 ## Intelligence — V2 (em andamento)
 
@@ -263,4 +279,4 @@ GET  /health
 
 - **V1 (esta versão)**: API completa com SLA (corrido e comercial), segurança (JWT + refresh token), documentação e health checks.
 - **V2 — Python / Intelligence** *(em andamento)*: ✅ serviço FastAPI de sugestão · ✅ integração com a API Java · ✅ ciclo de feedback (taxa de aceitação, exportação e retreino) · próximos: publicação automatizada do modelo retreinado, futuramente LLM.
-- **V3 — Front-end / Analytics**: React, dashboard, indicadores de SLA, MTTR, volume por categoria, chamados semelhantes.
+- **V3 — Front-end / Analytics** *(em andamento)*: ✅ API de analytics (SLA, MTTR, volume, desempenho, série diária) · próximos: dashboard em React, chamados semelhantes.

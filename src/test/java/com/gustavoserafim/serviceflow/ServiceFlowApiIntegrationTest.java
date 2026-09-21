@@ -2,8 +2,12 @@ package com.gustavoserafim.serviceflow;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gustavoserafim.serviceflow.entity.Priority;
+import com.gustavoserafim.serviceflow.entity.Ticket;
+import com.gustavoserafim.serviceflow.entity.TicketStatus;
 import com.gustavoserafim.serviceflow.entity.TicketSuggestion;
+import com.gustavoserafim.serviceflow.entity.User;
 import com.gustavoserafim.serviceflow.repository.CategoryRepository;
+import com.gustavoserafim.serviceflow.repository.TicketRepository;
 import com.gustavoserafim.serviceflow.repository.TicketSuggestionRepository;
 import com.gustavoserafim.serviceflow.repository.UserRepository;
 import com.jayway.jsonpath.JsonPath;
@@ -46,6 +50,9 @@ class ServiceFlowApiIntegrationTest extends AbstractIntegrationTest {
 
     @Autowired
     private CategoryRepository categoryRepository;
+
+    @Autowired
+    private TicketRepository ticketRepository;
 
     // ------------------------------------------------------------------ helpers
 
@@ -433,6 +440,130 @@ class ServiceFlowApiIntegrationTest extends AbstractIntegrationTest {
         mockMvc.perform(get("/api/tickets/suggestions/training-data").header("Authorization", "Bearer " + requester))
                 .andExpect(status().isForbidden());
         mockMvc.perform(get("/api/tickets/suggestions/training-data")).andExpect(status().isUnauthorized());
+    }
+
+    // ------------------------------------------------------------------ analytics
+
+    private Ticket craft(Number categoryId, User requester, User assignee, Priority priority, TicketStatus status,
+                         String createdAt, String resolvedAt, String slaDueAt) {
+        Ticket t = new Ticket();
+        t.setTitle("analytics");
+        t.setDescription("analytics");
+        t.setCategory(categoryRepository.getReferenceById(categoryId.longValue()));
+        t.setRequester(requester);
+        t.setAssignee(assignee);
+        t.setPriority(priority);
+        t.setStatus(status);
+        t.setCreatedAt(java.time.Instant.parse(createdAt));
+        t.setResolvedAt(resolvedAt == null ? null : java.time.Instant.parse(resolvedAt));
+        t.setSlaDueAt(java.time.Instant.parse(slaDueAt));
+        return ticketRepository.save(t);
+    }
+
+    @Test
+    void analytics_computeTheExpectedNumbersFromKnownData() throws Exception {
+        String admin = login(ADMIN_EMAIL, ADMIN_PASSWORD);
+        Number categoryId = createCategory(admin);
+        User requester = userRepository.findByEmailIgnoreCase(emailOf(admin, createUser(admin, "anr", "SOLICITANTE"))).orElseThrow();
+        User t1 = userRepository.findByEmailIgnoreCase(emailOf(admin, createUser(admin, "t1x", "TECNICO"))).orElseThrow();
+        User t2 = userRepository.findByEmailIgnoreCase(emailOf(admin, createUser(admin, "t2x", "TECNICO"))).orElseThrow();
+
+        // Período de teste: janeiro/2021 no fuso de São Paulo = [2021-01-01T03:00Z, 2021-02-01T03:00Z).
+        craft(categoryId, requester, t1, Priority.P1, TicketStatus.RESOLVIDO,
+                "2021-01-05T10:00:00Z", "2021-01-05T10:30:00Z", "2021-01-05T14:00:00Z");   // 30 min, dentro do SLA
+        craft(categoryId, requester, t1, Priority.P1, TicketStatus.FECHADO,
+                "2021-01-05T12:00:00Z", "2021-01-05T18:00:00Z", "2021-01-05T16:00:00Z");   // 360 min, ESTOUROU
+        craft(categoryId, requester, t2, Priority.P3, TicketStatus.RESOLVIDO,
+                "2021-01-06T09:00:00Z", "2021-01-06T12:00:00Z", "2021-01-07T09:00:00Z");   // 180 min, dentro
+        craft(categoryId, requester, t2, Priority.P3, TicketStatus.EM_ATENDIMENTO,
+                "2021-01-20T09:00:00Z", null, "2021-01-21T09:00:00Z");                      // ainda aberto (e já vencido)
+        craft(categoryId, requester, null, Priority.P4, TicketStatus.CANCELADO,
+                "2021-01-07T09:00:00Z", null, "2021-01-08T09:00:00Z");                      // cancelado: nunca entra
+        craft(categoryId, requester, t2, Priority.P2, TicketStatus.RESOLVIDO,
+                "2020-12-31T23:00:00Z", "2021-01-01T06:00:00Z", "2021-01-02T00:00:00Z");   // aberto ANTES do período, resolvido nele: 420 min
+
+        String period = "?from=2021-01-01&to=2021-01-31";
+
+        // --- summary: abertos 4 (#1-#4); resolvidos 4 (#1,#2,#3,#6); dentro do SLA 3; MTTR (30+360+180+420)/4 = 247,5
+        String summary = getJson("/api/analytics/summary" + period, admin);
+        assertThat((Integer) JsonPath.read(summary, "$.opened")).isEqualTo(4);
+        assertThat((Integer) JsonPath.read(summary, "$.resolved")).isEqualTo(4);
+        assertThat((Integer) JsonPath.read(summary, "$.resolvedWithinSla")).isEqualTo(3);
+        assertThat((Double) JsonPath.read(summary, "$.slaComplianceRate")).isEqualTo(0.75);
+        assertThat((Double) JsonPath.read(summary, "$.avgResolutionMinutes")).isEqualTo(247.5);
+        assertThat((Double) JsonPath.read(summary, "$.medianResolutionMinutes")).isEqualTo(270.0); // mediana de 30,180,360,420
+        assertThat((String) JsonPath.read(summary, "$.period.from")).isEqualTo("2021-01-01");
+        assertThat((Integer) JsonPath.read(summary, "$.current.breachedOpen")).isGreaterThanOrEqualTo(1); // o #4 (retrato de agora)
+        assertThat((Integer) JsonPath.read(summary, "$.current.byStatus.EM_ATENDIMENTO")).isGreaterThanOrEqualTo(1);
+
+        // --- por prioridade: sempre P1..P4
+        String byPriority = getJson("/api/analytics/by-priority" + period, admin);
+        assertThat((java.util.List<Object>) JsonPath.read(byPriority, "$.items[*].priority"))
+                .containsExactly("P1", "P2", "P3", "P4");
+        assertThat((java.util.List<Object>) JsonPath.read(byPriority, "$.items[*].opened")).containsExactly(2, 0, 2, 0);
+        assertThat((java.util.List<Object>) JsonPath.read(byPriority, "$.items[*].resolved")).containsExactly(2, 1, 1, 0);
+        assertThat((java.util.List<Object>) JsonPath.read(byPriority, "$.items[*].slaComplianceRate"))
+                .containsExactly(0.5, 1.0, 1.0, null);
+        assertThat((java.util.List<Object>) JsonPath.read(byPriority, "$.items[*].avgResolutionMinutes"))
+                .containsExactly(195.0, 420.0, 180.0, null);
+
+        // --- por categoria (só a nossa tem chamados em 2021)
+        String byCategory = getJson("/api/analytics/by-category" + period, admin);
+        assertThat((java.util.List<Object>) JsonPath.read(byCategory, "$.items[?(@.categoryId == " + categoryId + ")].opened"))
+                .containsExactly(4);
+        assertThat((java.util.List<Object>) JsonPath.read(byCategory, "$.items[?(@.categoryId == " + categoryId + ")].slaComplianceRate"))
+                .containsExactly(0.75);
+
+        // --- por técnico: t1 resolveu 2 (1 dentro, 195 min); t2 resolveu 2 (2 dentro, 300 min) e tem 1 em atendimento
+        String byTech = getJson("/api/analytics/by-technician" + period, admin);
+        assertThat((java.util.List<Object>) JsonPath.read(byTech, "$.items[?(@.technicianName == 't1x')].resolved")).containsExactly(2);
+        assertThat((java.util.List<Object>) JsonPath.read(byTech, "$.items[?(@.technicianName == 't1x')].avgResolutionMinutes")).containsExactly(195.0);
+        assertThat((java.util.List<Object>) JsonPath.read(byTech, "$.items[?(@.technicianName == 't2x')].avgResolutionMinutes")).containsExactly(300.0);
+        assertThat((java.util.List<Object>) JsonPath.read(byTech, "$.items[?(@.technicianName == 't2x')].inProgressNow")).containsExactly(1);
+
+        // --- série diária: 31 dias, com zeros; o dia é o do fuso da empresa
+        String timeline = getJson("/api/analytics/timeline" + period, admin);
+        assertThat((java.util.List<Object>) JsonPath.read(timeline, "$.items[*].day")).hasSize(31);
+        assertThat((String) JsonPath.read(timeline, "$.items[0].day")).isEqualTo("2021-01-01");
+        assertThat((String) JsonPath.read(timeline, "$.items[30].day")).isEqualTo("2021-01-31");
+        // #6 foi resolvido 2021-01-01T06:00Z = 03:00 em SP: pertence ao dia 01/01
+        assertThat((java.util.List<Object>) JsonPath.read(timeline, "$.items[?(@.day == '2021-01-01')].resolved")).containsExactly(1);
+        assertThat((java.util.List<Object>) JsonPath.read(timeline, "$.items[?(@.day == '2021-01-05')].opened")).containsExactly(2);
+        assertThat((java.util.List<Object>) JsonPath.read(timeline, "$.items[?(@.day == '2021-01-05')].resolved")).containsExactly(2);
+        assertThat((java.util.List<Object>) JsonPath.read(timeline, "$.items[?(@.day == '2021-01-10')].opened")).containsExactly(0);
+        int openedTotal = ((java.util.List<Integer>) JsonPath.read(timeline, "$.items[*].opened")).stream().mapToInt(Integer::intValue).sum();
+        assertThat(openedTotal).isEqualTo(4);
+    }
+
+    @Test
+    void analytics_areRestrictedToAdminAndTechnician_andValidateThePeriod() throws Exception {
+        String admin = login(ADMIN_EMAIL, ADMIN_PASSWORD);
+        String requester = login(emailOf(admin, createUser(admin, "ans", "SOLICITANTE")), PASSWORD);
+        String technician = login(emailOf(admin, createUser(admin, "ant", "TECNICO")), PASSWORD);
+
+        mockMvc.perform(get("/api/analytics/summary")).andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/api/analytics/summary").header("Authorization", "Bearer " + requester))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(get("/api/analytics/summary").header("Authorization", "Bearer " + technician))
+                .andExpect(status().isOk());
+
+        // sem parâmetros: últimos 30 dias, sem erro
+        mockMvc.perform(get("/api/analytics/timeline").header("Authorization", "Bearer " + admin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items.length()").value(30));
+
+        mockMvc.perform(get("/api/analytics/summary?from=2021-02-01&to=2021-01-01").header("Authorization", "Bearer " + admin))
+                .andExpect(status().isUnprocessableEntity());
+        mockMvc.perform(get("/api/analytics/summary?from=2019-01-01&to=2021-01-01").header("Authorization", "Bearer " + admin))
+                .andExpect(status().isUnprocessableEntity());
+        mockMvc.perform(get("/api/analytics/summary?from=ontem").header("Authorization", "Bearer " + admin))
+                .andExpect(status().isBadRequest());
+    }
+
+    private String getJson(String url, String token) throws Exception {
+        return mockMvc.perform(get(url).header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
     }
 
     @Test
