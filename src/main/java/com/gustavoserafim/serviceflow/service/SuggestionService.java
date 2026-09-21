@@ -8,12 +8,15 @@ import com.gustavoserafim.serviceflow.dto.SuggestionResponse.PriorityOption;
 import com.gustavoserafim.serviceflow.dto.SuggestionResponse.PrioritySuggestion;
 import com.gustavoserafim.serviceflow.entity.Category;
 import com.gustavoserafim.serviceflow.entity.Priority;
+import com.gustavoserafim.serviceflow.entity.TicketSuggestion;
 import com.gustavoserafim.serviceflow.integration.IntelligenceClient;
 import com.gustavoserafim.serviceflow.integration.IntelligenceProperties;
 import com.gustavoserafim.serviceflow.integration.IntelligenceResponse;
 import com.gustavoserafim.serviceflow.integration.IntelligenceResponse.Prediction;
 import com.gustavoserafim.serviceflow.integration.IntelligenceResponse.Score;
 import com.gustavoserafim.serviceflow.repository.CategoryRepository;
+import com.gustavoserafim.serviceflow.repository.TicketSuggestionRepository;
+import com.gustavoserafim.serviceflow.security.CurrentUserProvider;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -33,13 +36,19 @@ public class SuggestionService {
 
     private final IntelligenceClient intelligenceClient;
     private final CategoryRepository categoryRepository;
+    private final TicketSuggestionRepository suggestionRepository;
+    private final CurrentUserProvider currentUser;
     private final double minConfidence;
 
     public SuggestionService(IntelligenceClient intelligenceClient,
                              CategoryRepository categoryRepository,
+                             TicketSuggestionRepository suggestionRepository,
+                             CurrentUserProvider currentUser,
                              IntelligenceProperties properties) {
         this.intelligenceClient = intelligenceClient;
         this.categoryRepository = categoryRepository;
+        this.suggestionRepository = suggestionRepository;
+        this.currentUser = currentUser;
         this.minConfidence = properties.minConfidence();
     }
 
@@ -57,7 +66,28 @@ public class SuggestionService {
         if (category == null && priority == null) {
             return SuggestionResponse.unavailable();
         }
-        return new SuggestionResponse(true, response.modelVersion(), category, priority);
+
+        Long suggestionId = record(response.modelVersion(), category, priority);
+        return new SuggestionResponse(true, suggestionId, response.modelVersion(), category, priority);
+    }
+
+    /**
+     * Grava a sugestão OFERECIDA. Se o usuário abrir o chamado informando este id,
+     * o servidor compara e registra aceitou/trocou (ver SuggestionFeedbackService).
+     */
+    private Long record(String modelVersion, CategorySuggestion category, PrioritySuggestion priority) {
+        TicketSuggestion suggestion = new TicketSuggestion();
+        suggestion.setUser(currentUser.get());
+        suggestion.setModelVersion(modelVersion != null ? modelVersion : "desconhecida");
+        if (category != null) {
+            suggestion.setSuggestedCategory(categoryRepository.getReferenceById(category.id()));
+            suggestion.setCategoryConfidence(category.confidence());
+        }
+        if (priority != null) {
+            suggestion.setSuggestedPriority(priority.priority());
+            suggestion.setPriorityConfidence(priority.confidence());
+        }
+        return suggestionRepository.save(suggestion).getId();
     }
 
     /**

@@ -39,6 +39,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -60,6 +61,7 @@ class TicketServiceTest {
     @Mock private CategoryRepository categoryRepository;
     @Mock private UserRepository userRepository;
     @Mock private SlaRuleService slaRuleService;
+    @Mock private SuggestionFeedbackService suggestionFeedback;
     @Mock private CurrentUserProvider currentUser;
 
     private TicketService service;
@@ -74,7 +76,7 @@ class TicketServiceTest {
     @BeforeEach
     void setUp() {
         service = new TicketService(ticketRepository, commentRepository, historyRepository,
-                categoryRepository, userRepository, slaRuleService, currentUser,
+                categoryRepository, userRepository, slaRuleService, suggestionFeedback, currentUser,
                 Clock.fixed(NOW, ZoneOffset.UTC));
 
         admin = user(1L, "Admin", Role.ADMIN);
@@ -124,7 +126,7 @@ class TicketServiceTest {
         when(slaRuleService.dueAtFor(Priority.P1, NOW)).thenReturn(NOW.plusSeconds(240 * 60));
 
         TicketResponse response = service.create(
-                new TicketCreateRequest("  Sem rede  ", "Sem conexão", 10L, Priority.P1));
+                new TicketCreateRequest("  Sem rede  ", "Sem conexão", 10L, Priority.P1, 77L));
 
         assertThat(response.title()).isEqualTo("Sem rede");
         assertThat(response.status()).isEqualTo(TicketStatus.ABERTO);
@@ -135,6 +137,9 @@ class TicketServiceTest {
         ArgumentCaptor<TicketHistory> captor = ArgumentCaptor.forClass(TicketHistory.class);
         verify(historyRepository).save(captor.capture());
         assertThat(captor.getValue().getAction()).isEqualTo(HistoryAction.CREATED);
+
+        // o id da sugestão informado pelo cliente é repassado ao feedback (que decide se o aceita)
+        verify(suggestionFeedback).linkAndEvaluate(eq(77L), eq(requester), any(Ticket.class));
     }
 
     @Test
@@ -143,7 +148,7 @@ class TicketServiceTest {
         when(currentUser.get()).thenReturn(requester);
         when(categoryRepository.findById(10L)).thenReturn(Optional.of(category));
 
-        assertThatThrownBy(() -> service.create(new TicketCreateRequest("t", "d", 10L, Priority.P3)))
+        assertThatThrownBy(() -> service.create(new TicketCreateRequest("t", "d", 10L, Priority.P3, null)))
                 .isInstanceOf(BusinessRuleException.class);
         verify(ticketRepository, never()).save(any());
     }

@@ -154,7 +154,9 @@ Ajustes finos (no `application.yml`): `app.jwt.expiration-minutes` (access token
 | PUT | `/api/sla-rules/{priority}` (`resolutionMinutes`, `businessHours`) | ADMIN |
 | GET | `/actuator/health[/liveness\|/readiness]` | público |
 | POST · GET | `/api/tickets` | autenticado (GET filtra por visibilidade) |
-| POST | `/api/tickets/suggestions` (sugere categoria e prioridade) | autenticado |
+| POST | `/api/tickets/suggestions` (sugere categoria e prioridade; devolve `suggestionId`) | autenticado |
+| GET | `/api/tickets/suggestions/metrics` (taxa de aceitação por modelo) | ADMIN |
+| GET | `/api/tickets/suggestions/training-data` (CSV para retreino) | ADMIN |
 | GET | `/api/tickets/{id}` | dono, técnicos e admin |
 | PUT | `/api/tickets/{id}/assignment` | ADMIN, TECNICO |
 | PATCH | `/api/tickets/{id}/status` | conforme a matriz de permissões |
@@ -210,6 +212,25 @@ POST /api/tickets/suggestions   {"title": "...", "description": "..."}
     "priority": {"priority": "P3", "confidence": 0.66, "alternatives": [...]} }
 ```
 
+### Ciclo de feedback: medir e retreinar
+
+1. Cada sugestão **oferecida** é gravada e devolvida com um `suggestionId`. Ao abrir o chamado, o cliente pode enviá-lo em `POST /api/tickets` (campo opcional `suggestionId`).
+2. O **servidor compara** a sugestão com o que foi realmente gravado e registra *aceitou* ou *trocou* (categoria e prioridade separadamente). O cliente não informa o resultado, então não consegue fabricar métricas. Id inexistente, de outro usuário ou já usado é **ignorado** — o feedback nunca faz a abertura do chamado falhar.
+3. `GET /api/tickets/suggestions/metrics` (ADMIN) mostra a **taxa de aceitação por versão do modelo**: a medida real de qualidade, baseada no que os usuários fazem.
+4. `GET /api/tickets/suggestions/training-data` (ADMIN) exporta os chamados (exceto cancelados) em CSV no formato do treino. O texto é sanitizado contra *CSV injection* (células iniciadas por `=`, `+`, `-`, `@` ganham um apóstrofo).
+5. Retreino com dados reais:
+
+```bash
+# baixar (o arquivo contém dados de usuários: fica em data/local/, ignorado pelo Git)
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/tickets/suggestions/training-data \
+     -o intelligence/data/local/real.csv
+cd intelligence
+python -m app.train --data data/tickets.csv data/local/real.csv    # mostra as métricas e gera uma nova versão do modelo
+```
+
+O treino descarta linhas inválidas e **não quebra quando uma categoria nova tem poucos exemplos** (a avaliação daquele alvo é pulada, com aviso). Os rótulos exportados são o que o usuário escolheu e a equipe manteve: são a melhor fonte disponível, mas **revise antes de treinar**. Sugestões abandonadas (nunca viraram chamado) são apagadas após 7 dias.
+> A publicação do modelo retreinado ainda é manual (a imagem Docker treina só com o dataset inicial, de propósito, para não embutir dados reais na imagem).
+
 **Serviço Python isolado**
 
 ```bash
@@ -241,5 +262,5 @@ GET  /health
 ## Roadmap
 
 - **V1 (esta versão)**: API completa com SLA (corrido e comercial), segurança (JWT + refresh token), documentação e health checks.
-- **V2 — Python / Intelligence** *(em andamento)*: ✅ serviço FastAPI de sugestão · ✅ integração com a API Java · próximos: registrar se o usuário aceitou a sugestão (feedback para melhorar o modelo), retreino com chamados reais, futuramente LLM.
+- **V2 — Python / Intelligence** *(em andamento)*: ✅ serviço FastAPI de sugestão · ✅ integração com a API Java · ✅ ciclo de feedback (taxa de aceitação, exportação e retreino) · próximos: publicação automatizada do modelo retreinado, futuramente LLM.
 - **V3 — Front-end / Analytics**: React, dashboard, indicadores de SLA, MTTR, volume por categoria, chamados semelhantes.

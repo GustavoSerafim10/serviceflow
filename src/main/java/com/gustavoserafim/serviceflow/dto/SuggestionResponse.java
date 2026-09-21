@@ -17,6 +17,7 @@ import java.util.List;
  */
 public record SuggestionResponse(
         boolean available,
+        Long suggestionId,   // informe-o em POST /api/tickets (campo suggestionId) para registrar se a sugestão foi aceita
         String modelVersion,
         CategorySuggestion category,
         PrioritySuggestion priority
@@ -35,6 +36,6 @@ public record SuggestionResponse(
     }
 
     public static SuggestionResponse unavailable() {
-        return new SuggestionResponse(false, null, null, null);
+        return new SuggestionResponse(false, null, null, null, null);
     }
 }

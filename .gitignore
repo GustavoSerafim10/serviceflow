@@ -23,6 +23,8 @@ __pycache__/
 .venv/
 .pytest_cache/
 intelligence/models/
+# Dados reais exportados dos chamados (confidenciais): nunca versionar
+intelligence/data/local/
 
 ### Logs e ambiente ###
 *.log

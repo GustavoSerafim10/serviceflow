@@ -62,6 +62,7 @@ public class TicketService {
     private final CategoryRepository categoryRepository;
     private final UserRepository userRepository;
     private final SlaRuleService slaRuleService;
+    private final SuggestionFeedbackService suggestionFeedback;
     private final CurrentUserProvider currentUser;
     private final Clock clock;
 
@@ -71,6 +72,7 @@ public class TicketService {
                          CategoryRepository categoryRepository,
                          UserRepository userRepository,
                          SlaRuleService slaRuleService,
+                         SuggestionFeedbackService suggestionFeedback,
                          CurrentUserProvider currentUser,
                          Clock clock) {
         this.ticketRepository = ticketRepository;
@@ -79,6 +81,7 @@ public class TicketService {
         this.categoryRepository = categoryRepository;
         this.userRepository = userRepository;
         this.slaRuleService = slaRuleService;
+        this.suggestionFeedback = suggestionFeedback;
         this.currentUser = currentUser;
         this.clock = clock;
     }
@@ -110,6 +113,8 @@ public class TicketService {
         ticket.setSlaDueAt(slaRuleService.dueAtFor(request.priority(), now));
 
         ticketRepository.save(ticket);
+        // Feedback da sugestão automática (melhor esforço: nunca falha a abertura).
+        suggestionFeedback.linkAndEvaluate(request.suggestionId(), actor, ticket);
         record(ticket, actor, HistoryAction.CREATED,
                 "Chamado aberto com prioridade " + ticket.getPriority()
                         + " (prazo de SLA: " + ticket.getSlaDueAt() + ")");

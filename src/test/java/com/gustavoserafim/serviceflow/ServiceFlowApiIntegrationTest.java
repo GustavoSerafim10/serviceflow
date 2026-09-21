@@ -1,5 +1,11 @@
 package com.gustavoserafim.serviceflow;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.gustavoserafim.serviceflow.entity.Priority;
+import com.gustavoserafim.serviceflow.entity.TicketSuggestion;
+import com.gustavoserafim.serviceflow.repository.CategoryRepository;
+import com.gustavoserafim.serviceflow.repository.TicketSuggestionRepository;
+import com.gustavoserafim.serviceflow.repository.UserRepository;
 import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +37,15 @@ class ServiceFlowApiIntegrationTest extends AbstractIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private TicketSuggestionRepository suggestionRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private CategoryRepository categoryRepository;
 
     // ------------------------------------------------------------------ helpers
 
@@ -296,6 +311,128 @@ class ServiceFlowApiIntegrationTest extends AbstractIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"title\":\"\",\"description\":\"x\"}"))
                 .andExpect(status().isBadRequest());
+    }
+
+    // ------------------------------------------------ ciclo de feedback das sugestões
+
+    private TicketSuggestion offerSuggestion(String ownerEmail, String modelVersion,
+                                              Number categoryId, Priority priority) {
+        TicketSuggestion suggestion = new TicketSuggestion();
+        suggestion.setUser(userRepository.findByEmailIgnoreCase(ownerEmail).orElseThrow());
+        suggestion.setModelVersion(modelVersion);
+        suggestion.setSuggestedCategory(categoryRepository.getReferenceById(categoryId.longValue()));
+        suggestion.setCategoryConfidence(0.8);
+        suggestion.setSuggestedPriority(priority);
+        suggestion.setPriorityConfidence(0.7);
+        return suggestionRepository.save(suggestion);
+    }
+
+    private org.springframework.test.web.servlet.ResultActions openTicket(
+            String token, Number categoryId, String priority, Long suggestionId) throws Exception {
+        java.util.Map<String, Object> payload = new java.util.LinkedHashMap<>();
+        payload.put("title", "Chamado " + UUID.randomUUID());
+        payload.put("description", "detalhe");
+        payload.put("categoryId", categoryId);
+        payload.put("priority", priority);
+        if (suggestionId != null) {
+            payload.put("suggestionId", suggestionId);
+        }
+        String json = new ObjectMapper().writeValueAsString(payload);
+        return mockMvc.perform(post("/api/tickets")
+                .header("Authorization", "Bearer " + token)
+                .contentType(MediaType.APPLICATION_JSON).content(json));
+    }
+
+    @Test
+    void suggestionFeedback_recordsAcceptedAndChanged_ignoresForeignAndReused_andExposesMetrics() throws Exception {
+        String admin = login(ADMIN_EMAIL, ADMIN_PASSWORD);
+        Number catA = createCategory(admin);
+        Number catB = createCategory(admin);
+        String ownerEmail = emailOf(admin, createUser(admin, "fb", "SOLICITANTE"));
+        String strangerEmail = emailOf(admin, createUser(admin, "fb2", "SOLICITANTE"));
+        String owner = login(ownerEmail, PASSWORD);
+        String model = "it-" + UUID.randomUUID();
+
+        TicketSuggestion kept = offerSuggestion(ownerEmail, model, catA, Priority.P2);
+        TicketSuggestion changed = offerSuggestion(ownerEmail, model, catA, Priority.P1);
+        TicketSuggestion foreign = offerSuggestion(strangerEmail, model, catA, Priority.P2);
+        offerSuggestion(ownerEmail, model, catA, Priority.P3); // oferecida e abandonada (nunca vira chamado)
+
+        // aceitou tudo
+        openTicket(owner, catA, "P2", kept.getId()).andExpect(status().isCreated());
+        // trocou categoria e prioridade
+        openTicket(owner, catB, "P3", changed.getId()).andExpect(status().isCreated());
+        // sugestão de OUTRO usuário e sugestão já usada: o chamado abre normalmente, o feedback é ignorado
+        openTicket(owner, catA, "P2", foreign.getId()).andExpect(status().isCreated());
+        openTicket(owner, catA, "P2", kept.getId()).andExpect(status().isCreated());
+        // id inexistente também nunca falha a abertura
+        openTicket(owner, catA, "P2", 999_999_999L).andExpect(status().isCreated());
+
+        TicketSuggestion keptSaved = suggestionRepository.findById(kept.getId()).orElseThrow();
+        assertThat(keptSaved.getCategoryAccepted()).isTrue();
+        assertThat(keptSaved.getPriorityAccepted()).isTrue();
+        TicketSuggestion changedSaved = suggestionRepository.findById(changed.getId()).orElseThrow();
+        assertThat(changedSaved.getCategoryAccepted()).isFalse();
+        assertThat(changedSaved.getPriorityAccepted()).isFalse();
+        assertThat(suggestionRepository.findById(foreign.getId()).orElseThrow().getTicket()).isNull();
+
+        // métricas (ADMIN): 4 oferecidas, 2 viraram chamado, categoria 1/2 aceita, prioridade 1/2 aceita
+        String metrics = mockMvc.perform(get("/api/tickets/suggestions/metrics")
+                        .header("Authorization", "Bearer " + admin))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        String base = "$.models[?(@.modelVersion == '" + model + "')]";
+        assertThat((java.util.List<Object>) JsonPath.read(metrics, base + ".offered")).containsExactly(4);
+        assertThat((java.util.List<Object>) JsonPath.read(metrics, base + ".usedInTickets")).containsExactly(2);
+        assertThat((java.util.List<Object>) JsonPath.read(metrics, base + ".categoryAcceptanceRate")).containsExactly(0.5);
+        assertThat((java.util.List<Object>) JsonPath.read(metrics, base + ".priorityAcceptanceRate")).containsExactly(0.5);
+
+        // só ADMIN vê as métricas
+        mockMvc.perform(get("/api/tickets/suggestions/metrics").header("Authorization", "Bearer " + owner))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void trainingDataExport_isAdminOnly_neutralisesFormulas_andSkipsCancelledTickets() throws Exception {
+        String admin = login(ADMIN_EMAIL, ADMIN_PASSWORD);
+        Number category = createCategory(admin);
+        String requester = login(emailOf(admin, createUser(admin, "exp", "SOLICITANTE")), PASSWORD);
+        String marker = UUID.randomUUID().toString();
+
+        String kept = new ObjectMapper().writeValueAsString(java.util.Map.of(
+                "title", "=cmd|' /C calc'!A0 " + marker, "description", "linha 1, com vírgula\nlinha 2",
+                "categoryId", category, "priority", "P2"));
+        mockMvc.perform(post("/api/tickets").header("Authorization", "Bearer " + requester)
+                .contentType(MediaType.APPLICATION_JSON).content(kept)).andExpect(status().isCreated());
+
+        String cancelledJson = new ObjectMapper().writeValueAsString(java.util.Map.of(
+                "title", "cancelado " + marker, "description", "d", "categoryId", category, "priority", "P4"));
+        String cancelled = mockMvc.perform(post("/api/tickets").header("Authorization", "Bearer " + requester)
+                        .contentType(MediaType.APPLICATION_JSON).content(cancelledJson))
+                .andReturn().getResponse().getContentAsString();
+        Number cancelledId = JsonPath.read(cancelled, "$.id");
+        mockMvc.perform(patch("/api/tickets/" + cancelledId + "/status")
+                        .header("Authorization", "Bearer " + requester)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"CANCELADO\"}"))
+                .andExpect(status().isOk());
+
+        var result = mockMvc.perform(get("/api/tickets/suggestions/training-data")
+                        .header("Authorization", "Bearer " + admin))
+                .andExpect(status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers
+                        .header().string("Content-Disposition", org.hamcrest.Matchers.containsString("tickets-training.csv")))
+                .andReturn().getResponse();
+        String csv = result.getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+
+        assertThat(csv).startsWith("title,description,category,priority\n");
+        assertThat(csv).contains("'=cmd|' /C calc'!A0 " + marker);   // fórmula neutralizada com apóstrofo
+        assertThat(csv).doesNotContain("\n=cmd");                      // nenhuma célula começa com "="
+        assertThat(csv).contains("\"linha 1, com vírgula\nlinha 2\""); // vírgula e quebra de linha entre aspas
+        assertThat(csv).doesNotContain("cancelado " + marker);         // cancelados ficam de fora
+
+        mockMvc.perform(get("/api/tickets/suggestions/training-data").header("Authorization", "Bearer " + requester))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(get("/api/tickets/suggestions/training-data")).andExpect(status().isUnauthorized());
     }
 
     @Test

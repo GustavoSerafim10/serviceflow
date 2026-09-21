@@ -24,6 +24,10 @@ public record TicketCreateRequest(
         Long categoryId,
 
         @NotNull(message = "A prioridade é obrigatória")
-        Priority priority
+        Priority priority,
+
+        // Opcional: id devolvido por POST /api/tickets/suggestions. Permite ao servidor registrar se o
+        // usuário aceitou ou trocou a sugestão. Inválido ou de outro usuário é ignorado (nunca falha a abertura).
+        Long suggestionId
 ) {
 }
