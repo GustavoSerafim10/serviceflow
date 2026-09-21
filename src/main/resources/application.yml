@@ -62,6 +62,10 @@ app:
     read-timeout: 2s
     # Piso de confiança: uma sugestão principal com menos que isso é ruído e não é oferecida.
     min-confidence: 0.30
+  # Dados FICTÍCIOS para demonstração (dashboard, capturas de tela). Desligado por padrão.
+  # Ative com DEMO_DATA=true. NUNCA em produção: cria usuários com senha conhecida.
+  demo-data:
+    enabled: ${DEMO_DATA:false}
   # Calendário usado pelas regras de SLA marcadas como "horário comercial".
   sla:
     business-hours:
@@ -71,7 +75,7 @@ app:
       days: MONDAY,TUESDAY,WEDNESDAY,THURSDAY,FRIDAY
       # Feriados (datas em que não há expediente), por exemplo:
       # holidays: 2026-12-25, 2027-01-01
-  # Primeiro ADMIN, criado na subida SÓ se a tabela de usuários estiver vazia.
+  # Primeiro ADMIN, criado na subida SÓ se ainda não existir nenhum ADMIN.
   bootstrap-admin:
     name: Administrador
     email: ${ADMIN_EMAIL:admin@serviceflow.local}

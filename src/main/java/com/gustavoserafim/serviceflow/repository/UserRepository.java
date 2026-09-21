@@ -1,5 +1,6 @@
 package com.gustavoserafim.serviceflow.repository;
 
+import com.gustavoserafim.serviceflow.entity.Role;
 import com.gustavoserafim.serviceflow.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -12,4 +13,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByEmailIgnoreCase(String email);
 
     boolean existsByEmailIgnoreCase(String email);
+
+    boolean existsByRole(Role role);
 }

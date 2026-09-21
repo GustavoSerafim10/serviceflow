@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
 /**
  * Resolve o "ovo e a galinha": só ADMIN cria usuários, mas no primeiro boot
  * não existe nenhum. O ApplicationRunner roda uma vez logo após a aplicação
- * subir; se a tabela estiver vazia, cria o primeiro ADMIN com os dados de
+ * subir; se não houver nenhum ADMIN, cria o primeiro com os dados de
  * app.bootstrap-admin.* (application.yml ou variáveis de ambiente).
  */
 @Component
@@ -42,7 +42,9 @@ public class AdminBootstrap implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
-        if (userRepository.count() > 0) {
+        // A condição é "não existe nenhum ADMIN" (e não "não existe nenhum usuário"): se só houver
+        // usuários comuns (ex: dados de demonstração), ainda falta quem administre o sistema.
+        if (userRepository.existsByRole(Role.ADMIN) || userRepository.existsByEmailIgnoreCase(email.trim())) {
             return;
         }
 
@@ -53,6 +55,6 @@ public class AdminBootstrap implements ApplicationRunner {
         admin.setRole(Role.ADMIN);
         userRepository.save(admin);
 
-        log.warn("Nenhum usuário encontrado: ADMIN inicial criado ({}). Troque a senha padrão!", admin.getEmail());
+        log.warn("Nenhum ADMIN encontrado: ADMIN inicial criado ({}). Troque a senha padrão!", admin.getEmail());
     }
 }
