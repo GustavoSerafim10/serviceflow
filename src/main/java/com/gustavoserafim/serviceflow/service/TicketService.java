@@ -3,8 +3,10 @@ package com.gustavoserafim.serviceflow.service;
 import com.gustavoserafim.serviceflow.dto.CommentRequest;
 import com.gustavoserafim.serviceflow.dto.CommentResponse;
 import com.gustavoserafim.serviceflow.dto.HistoryResponse;
+import com.gustavoserafim.serviceflow.dto.PageResponse;
 import com.gustavoserafim.serviceflow.dto.TicketAssignRequest;
 import com.gustavoserafim.serviceflow.dto.TicketCreateRequest;
+import com.gustavoserafim.serviceflow.dto.TicketFilter;
 import com.gustavoserafim.serviceflow.dto.TicketResponse;
 import com.gustavoserafim.serviceflow.dto.TicketStatusRequest;
 import com.gustavoserafim.serviceflow.entity.Category;
@@ -21,14 +23,21 @@ import com.gustavoserafim.serviceflow.repository.CategoryRepository;
 import com.gustavoserafim.serviceflow.repository.TicketCommentRepository;
 import com.gustavoserafim.serviceflow.repository.TicketHistoryRepository;
 import com.gustavoserafim.serviceflow.repository.TicketRepository;
+import com.gustavoserafim.serviceflow.repository.TicketSpecifications;
 import com.gustavoserafim.serviceflow.repository.UserRepository;
 import com.gustavoserafim.serviceflow.security.CurrentUserProvider;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -44,6 +53,8 @@ import java.util.List;
  */
 @Service
 public class TicketService {
+
+    private static final int MAX_PAGE_SIZE = 100;
 
     private final TicketRepository ticketRepository;
     private final TicketCommentRepository commentRepository;
@@ -110,6 +121,35 @@ public class TicketService {
     @Transactional(readOnly = true)
     public TicketResponse findById(Long id) {
         return toResponse(getVisible(id, currentUser.get()));
+    }
+
+    // ------------------------------------------------------------------ listar
+
+    /**
+     * Lista paginada com filtros. SOLICITANTE só recebe os próprios chamados
+     * (a condição é acrescentada AQUI, no servidor, e não depende do que o
+     * cliente enviar). Ordenação fixa: mais recentes primeiro — o "sort" do
+     * cliente é ignorado de propósito: aceitar ordenação livre permitiria
+     * ordenar por campos aninhados sensíveis (ex: requester.passwordHash) e
+     * inferir dados a partir da ordem do resultado.
+     */
+    @Transactional(readOnly = true)
+    public PageResponse<TicketResponse> search(TicketFilter filter, Pageable pageable) {
+        User actor = currentUser.get();
+        Instant now = clock.instant();
+
+        List<Specification<Ticket>> specs = new ArrayList<>(TicketSpecifications.from(filter, now));
+        if (actor.getRole() == Role.SOLICITANTE) {
+            specs.add(TicketSpecifications.requesterIs(actor.getId()));
+        }
+
+        Pageable safePageable = PageRequest.of(
+                pageable.getPageNumber(),
+                Math.min(pageable.getPageSize(), MAX_PAGE_SIZE),
+                Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id")));
+
+        Page<Ticket> page = ticketRepository.findAll(Specification.allOf(specs), safePageable);
+        return PageResponse.from(page.map(ticket -> TicketResponse.from(ticket, now)));
     }
 
     // ----------------------------------------------------------------- atribuir

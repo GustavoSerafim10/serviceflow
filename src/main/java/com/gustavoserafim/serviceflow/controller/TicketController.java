@@ -3,12 +3,15 @@ package com.gustavoserafim.serviceflow.controller;
 import com.gustavoserafim.serviceflow.dto.CommentRequest;
 import com.gustavoserafim.serviceflow.dto.CommentResponse;
 import com.gustavoserafim.serviceflow.dto.HistoryResponse;
+import com.gustavoserafim.serviceflow.dto.PageResponse;
 import com.gustavoserafim.serviceflow.dto.TicketAssignRequest;
 import com.gustavoserafim.serviceflow.dto.TicketCreateRequest;
+import com.gustavoserafim.serviceflow.dto.TicketFilter;
 import com.gustavoserafim.serviceflow.dto.TicketResponse;
 import com.gustavoserafim.serviceflow.dto.TicketStatusRequest;
 import com.gustavoserafim.serviceflow.service.TicketService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -47,6 +50,16 @@ public class TicketController {
                 .buildAndExpand(created.id())
                 .toUri();
         return ResponseEntity.created(location).body(created);
+    }
+
+    /**
+     * Listagem com filtros e paginação, ex:
+     *   GET /api/tickets?status=EM_ATENDIMENTO&priority=P1&slaStatus=ESTOURADO&page=0&size=20
+     * TicketFilter e Pageable são preenchidos pelo Spring a partir da query string.
+     */
+    @GetMapping
+    public PageResponse<TicketResponse> list(TicketFilter filter, Pageable pageable) {
+        return ticketService.search(filter, pageable);
     }
 
     @GetMapping("/{id}")
