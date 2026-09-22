@@ -127,7 +127,10 @@ body {
 }
 
 h1, h2, h3, p { margin: 0; }
-button, input { font: inherit; color: inherit; }
+/* O navegador dá à <textarea> uma fonte monoespaçada por padrão (herança antiga do <textarea>/<pre>);
+   sem este reset, a descrição do chamado saía em Consolas enquanto o resto do formulário usava a fonte
+   do app. select entra por segurança (alguns navegadores também não herdam nele). */
+button, input, textarea, select { font: inherit; color: inherit; }
 
 .sr-only {
   position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;

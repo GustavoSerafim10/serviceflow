@@ -26,7 +26,8 @@ function LocalBanner() {
       {persistent ? (
         <>
           <strong>Modo local.</strong> Tudo o que você registra fica salvo <strong>só neste navegador</strong>: nada é enviado a nenhum servidor.
-          Faça backup em <a href={paths.settings}>Configurações</a>. A sugestão automática de categoria (serviço Python) exige o servidor e não está disponível aqui.
+          Faça backup em <a href={paths.settings}>Configurações</a>. A sugestão de categoria e prioridade aqui é uma estimativa simples por
+          palavras-chave — o modelo treinado (serviço Python) só está disponível com o servidor.
         </>
       ) : (
         <>

@@ -5,6 +5,7 @@ import type { Priority, SuggestionResponse } from '../../api/types'
 import { formatMinutes, formatRate } from '../../lib/format'
 import { PRIORITIES, PRIORITY_INFO } from '../../lib/labels'
 import { navigate, paths } from '../../lib/router'
+import { suggestLocally } from '../../local/suggest'
 import { STANDALONE } from '../../local/mode'
 
 export function NewTicketPage() {
@@ -36,7 +37,25 @@ export function NewTicketPage() {
     onError: (e: Error) => setError(e.message),
   })
 
-  async function askSuggestion() {
+  /** Modo local: sem servidor, então a sugestão vem de um heurística por palavras-chave (ver local/suggest.ts). */
+  function askSuggestionLocally() {
+    const result = suggestLocally(title, description)
+    // O rótulo devolvido precisa virar o ID de uma categoria ATIVA de verdade (o usuário pode ter
+    // renomeado ou desativado as padrão) — a mesma regra do servidor: nunca sugerir o que não existe.
+    const category = result.category
+      ? (categories.data ?? []).find((c) => c.active && c.name.toLowerCase() === result.category!.label.toLowerCase())
+      : undefined
+
+    setSuggestion({
+      available: !!category || !!result.priority,
+      suggestionId: null,
+      modelVersion: null,
+      category: category ? { id: category.id, name: category.name, confidence: result.category!.score } : null,
+      priority: result.priority ? { priority: result.priority.priority, confidence: result.priority.score } : null,
+    })
+  }
+
+  async function askSuggestionFromServer() {
     setSuggesting(true)
     try {
       setSuggestion(await suggest(title, description))
@@ -45,6 +64,11 @@ export function NewTicketPage() {
     } finally {
       setSuggesting(false)
     }
+  }
+
+  async function askSuggestion() {
+    if (STANDALONE) askSuggestionLocally()
+    else await askSuggestionFromServer()
   }
 
   function apply() {
@@ -71,26 +95,25 @@ export function NewTicketPage() {
           <textarea id="t-desc" className="textarea" required maxLength={4000} value={description} onChange={(e) => setDescription(e.target.value)} />
         </div>
 
-        {/* A sugestão automática depende do serviço Python (servidor): não existe no modo local. */}
-        {!STANDALONE && (
-          <div className="suggestion">
-            <div className="actions">
-              <button type="button" className="btn" disabled={!title.trim() || !description.trim() || suggesting} onClick={() => void askSuggestion()}>
-                {suggesting ? 'Consultando…' : 'Sugerir categoria e prioridade'}
-              </button>
-            </div>
-            {suggestion && !suggestion.available && <span className="field-hint">Sugestão indisponível no momento. Preencha manualmente.</span>}
-            {suggestion?.available && (
-              <>
-                <span>
-                  {suggestion.category ? <>Categoria <strong>{suggestion.category.name}</strong> ({formatRate(suggestion.category.confidence)}) </> : null}
-                  {suggestion.priority ? <>· Prioridade <strong>{suggestion.priority.priority}</strong> ({formatRate(suggestion.priority.confidence)})</> : null}
-                </span>
-                <span className="actions"><button type="button" className="btn" onClick={apply}>Aplicar sugestão</button></span>
-              </>
-            )}
+        <div className="suggestion">
+          <div className="actions">
+            <button type="button" className="btn" disabled={!title.trim() || !description.trim() || suggesting} onClick={() => void askSuggestion()}>
+              {suggesting ? 'Consultando…' : 'Sugerir categoria e prioridade'}
+            </button>
+            {/* Modo local: deixa claro que é uma estimativa por palavras-chave, não o modelo treinado do servidor. */}
+            {STANDALONE && <span className="field-hint">Estimativa local por palavras-chave — sem o modelo do servidor.</span>}
           </div>
-        )}
+          {suggestion && !suggestion.available && <span className="field-hint">Sugestão indisponível para este texto. Preencha manualmente.</span>}
+          {suggestion?.available && (
+            <>
+              <span>
+                {suggestion.category ? <>Categoria <strong>{suggestion.category.name}</strong> ({formatRate(suggestion.category.confidence)}) </> : null}
+                {suggestion.priority ? <>· Prioridade <strong>{suggestion.priority.priority}</strong> ({formatRate(suggestion.priority.confidence)})</> : null}
+              </span>
+              <span className="actions"><button type="button" className="btn" onClick={apply}>Aplicar sugestão</button></span>
+            </>
+          )}
+        </div>
 
         <div className="form-row">
           <div className="field">

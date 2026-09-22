@@ -143,6 +143,38 @@ describe('modo local: ciclo de vida de um chamado, ponta a ponta', () => {
     expect(await within(list).findByText('Nenhum chamado com esses filtros.')).toBeInTheDocument()
   })
 
+  it('sugestão local: identifica categoria e prioridade pelo texto, sem tocar a rede, e aplica ao formulário', async () => {
+    renderApp()
+    await nav('Chamados')
+    await userEvent.click(await screen.findByRole('link', { name: /Novo chamado|Abrir o primeiro chamado/ }))
+
+    await userEvent.type(await screen.findByLabelText('Título'), 'Sem internet no setor')
+    await userEvent.type(screen.getByLabelText('Descrição'), 'Ninguém consegue acessar, o wifi caiu e é urgente')
+    expect(screen.getByText(/Estimativa local por palavras-chave/)).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Sugerir categoria e prioridade' }))
+
+    expect(await screen.findByText('Rede', { selector: 'strong' })).toBeInTheDocument()
+    expect(screen.getByText('P1', { selector: 'strong' })).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Aplicar sugestão' }))
+    const categorySelect = screen.getByLabelText('Categoria') as HTMLSelectElement
+    expect(categorySelect.selectedOptions[0]).toHaveTextContent('Rede')
+    expect(screen.getByLabelText('Prioridade')).toHaveValue('P1')
+  })
+
+  it('sugestão local: sem palavra reconhecida, avisa e não trava o formulário', async () => {
+    renderApp()
+    await nav('Chamados')
+    await userEvent.click(await screen.findByRole('link', { name: /Novo chamado|Abrir o primeiro chamado/ }))
+
+    await userEvent.type(await screen.findByLabelText('Título'), 'Assunto qualquer')
+    await userEvent.type(screen.getByLabelText('Descrição'), 'xyzxyz abc123')
+    await userEvent.click(screen.getByRole('button', { name: 'Sugerir categoria e prioridade' }))
+
+    expect(await screen.findByText(/Sugestão indisponível para este texto/)).toBeInTheDocument()
+  })
+
   it('formulário mostra o prazo de SLA da prioridade escolhida e recusa dados inválidos vindos do motor', async () => {
     renderApp()
     await nav('Chamados')

@@ -71,7 +71,11 @@ export function BarChart({ rows, ariaLabel }: Props) {
           >
             <span className="bar-label" title={row.label}>{row.label}</span>
             <span className="bar-track">
-              <span className="bar" style={{ width: `${(row.value / max) * MAX_FRACTION * 100}%`, background: row.color }} />
+              {/* Sem barra (nem um tiquinho) quando o valor é zero: um traço colorido em "0" mais atrapalha
+                  do que ajuda a comparar magnitude — o número já diz tudo. */}
+              {row.value > 0 && (
+                <span className="bar" style={{ width: `${(row.value / max) * MAX_FRACTION * 100}%`, background: row.color }} />
+              )}
               <span className="bar-value">{formatInt(row.value)}</span>
             </span>
           </div>
