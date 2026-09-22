@@ -210,33 +210,43 @@ button, input, textarea, select { font: inherit; color: inherit; }
 /* Refetch mantém o quadro: o conteúdo anterior fica levemente esmaecido, sem esqueleto nem salto de layout. */
 .dashboard[data-stale='true'] .card, .dashboard[data-stale='true'] .tile { opacity: 0.6; }
 
-.kpis { display: grid; gap: 16px; grid-template-columns: 1.4fr repeat(4, 1fr); }
+.kpis { display: grid; gap: 12px; grid-template-columns: 1.3fr repeat(4, 1fr); }
 @media (max-width: 1000px) { .kpis { grid-template-columns: 1fr 1fr; } .kpis .hero { grid-column: 1 / -1; } }
 @media (max-width: 520px) { .kpis { grid-template-columns: 1fr; } }
 
-.tile, .card {
+.card {
   background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px;
   box-shadow: var(--shadow-sm); transition: opacity 0.15s, box-shadow 0.15s;
 }
-.tile-label { color: var(--text-2); font-size: 13px; }
-.tile-value {
-  font-family: var(--font-display); font-size: 30px; font-weight: 700; letter-spacing: -0.02em;
-  line-height: 1.15; margin-top: 4px;
+/* Tiles de indicador: compactos de propósito — cada um carrega um rótulo curto e um número, não
+   conteúdo que precise de respiro (tabela, gráfico). Rótulo em versalete pequeno (jeito "cartão de
+   métrica" de dashboard financeiro) para o número ser sempre o elemento com mais peso visual do bloco. */
+.tile {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px;
+  box-shadow: var(--shadow-sm); transition: opacity 0.15s, box-shadow 0.15s;
 }
-.tile-sub { color: var(--text-2); font-size: 13px; margin-top: 4px; }
+.tile-label {
+  color: var(--text-2); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;
+}
+.tile-value {
+  font-family: var(--font-display); font-size: 22px; font-weight: 700; letter-spacing: -0.01em;
+  line-height: 1.2; margin-top: 3px;
+}
+.tile-sub { color: var(--text-muted); font-size: 12px; margin-top: 3px; }
 
-/* Figura-herói: o único número que o painel lidera. >=48px, mesma família (Sora, a sans deste app —
+/* Figura-herói: o único número que o painel lidera — maior que os outros tiles, mas sem exagero (a
+   caixa em volta fica do mesmo tamanho compacto das demais). Mesma família (Sora, a sans deste app —
    nunca uma face de exibição à parte), algarismos proporcionais. A faixa no topo marca "este é o número
    que importa" sem competir com o valor. */
 .hero { position: relative; overflow: hidden; }
 .hero::before { content: ''; position: absolute; inset: 0 0 auto 0; height: 3px; background: var(--brand); }
-.hero .tile-value { font-size: 56px; letter-spacing: -0.03em; line-height: 1.05; }
+.hero .tile-value { font-size: 34px; letter-spacing: -0.02em; line-height: 1.1; margin-top: 4px; }
 
-.meter { height: 8px; border-radius: 4px; background: var(--meter-track); margin-top: 12px; overflow: hidden; }
-.meter > span { display: block; height: 100%; background: var(--meter-fill); border-radius: 4px; }
+.meter { height: 5px; border-radius: 3px; background: var(--meter-track); margin-top: 8px; overflow: hidden; }
+.meter > span { display: block; height: 100%; background: var(--meter-fill); border-radius: 3px; }
 .meter-inline { display: inline-block; width: 72px; height: 6px; vertical-align: middle; margin: 0 8px 0 0; }
 
-.status { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; margin-top: 6px; }
+.status { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; margin-top: 4px; }
 .status svg { width: 16px; height: 16px; flex: none; }
 .status-critical { color: var(--critical); }
 .status-good { color: var(--good-text); }

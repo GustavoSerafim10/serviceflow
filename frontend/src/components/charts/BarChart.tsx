@@ -30,18 +30,20 @@ const MAX_FRACTION = 0.84
 export function BarChart({ rows, ariaLabel }: Props) {
   const { ref, width } = useContainerWidth<HTMLDivElement>()
   const chartRef = useRef<HTMLDivElement | null>(null)
-  const [hover, setHover] = useState<{ index: number; x: number; y: number } | null>(null)
+  const [hover, setHover] = useState<{ index: number; x: number; y: number; containerHeight: number } | null>(null)
 
   const max = Math.max(1, ...rows.map((r) => r.value))
 
+  // ref.current só é lido aqui dentro (dispara em pointermove/focus, nunca durante a renderização) —
+  // ler um ref no corpo do componente é o antipadrão que o React avisa (o valor pode ficar desatualizado).
   function place(index: number, el: HTMLElement, clientX?: number, clientY?: number) {
     const box = chartRef.current?.getBoundingClientRect()
     if (!box) return
     if (clientX != null && clientY != null) {
-      setHover({ index, x: clientX - box.left, y: clientY - box.top + 12 })
+      setHover({ index, x: clientX - box.left, y: clientY - box.top + 12, containerHeight: box.height })
     } else {
       const r = el.getBoundingClientRect() // foco por teclado: ancora na linha
-      setHover({ index, x: r.left - box.left + r.width * 0.55, y: r.top - box.top + r.height })
+      setHover({ index, x: r.left - box.left + r.width * 0.55, y: r.top - box.top + r.height, containerHeight: box.height })
     }
   }
 
@@ -83,7 +85,10 @@ export function BarChart({ rows, ariaLabel }: Props) {
       </div>
 
       {active && hover && (
-        <Tooltip x={hover.x} y={hover.y} containerWidth={width} title={active.label} rows={tooltipRows} />
+        <Tooltip
+          x={hover.x} y={hover.y} containerWidth={width} containerHeight={hover.containerHeight}
+          title={active.label} rows={tooltipRows}
+        />
       )}
     </div>
   )

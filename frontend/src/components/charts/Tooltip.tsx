@@ -9,11 +9,17 @@ interface Props {
   x: number
   y: number
   containerWidth: number
+  /** Altura do gráfico (em px). Sem ela, o tooltip só encosta em 0 no topo — pode transbordar por baixo
+      do cartão (ex: a última linha de um gráfico de barras) e sobrepor o conteúdo seguinte da página. */
+  containerHeight?: number
   title: string
   rows: TooltipRow[]
 }
 
 const WIDTH = 176
+// Estimativa de altura (título + uma linha por dado): suficiente para decidir se cabe sem medir o DOM.
+const TITLE_H = 26
+const ROW_H = 20
 
 /**
  * Tooltip de gráfico. Os valores LIDERAM (negrito, alto contraste) e os rótulos seguem em cor
@@ -23,12 +29,17 @@ const WIDTH = 176
  *
  * Tooltips melhoram, nunca condicionam: todo valor também existe na visão de tabela.
  */
-export function Tooltip({ x, y, containerWidth, title, rows }: Props) {
+export function Tooltip({ x, y, containerWidth, containerHeight, title, rows }: Props) {
   const flip = x + 14 + WIDTH > containerWidth
   const left = flip ? x - 14 - WIDTH : x + 14
 
+  // Mesma ideia do flip horizontal, mas como grude no teto: nunca deixa o tooltip passar do fundo do
+  // gráfico (ele fica na área de um cartão sem overflow:hidden — sem isso, extrapolava para o cartão de baixo).
+  const height = TITLE_H + rows.length * ROW_H
+  const top = containerHeight != null ? Math.max(0, Math.min(y, containerHeight - height)) : Math.max(0, y)
+
   return (
-    <div className="tooltip" style={{ left: Math.max(0, left), top: Math.max(0, y), width: WIDTH }} role="presentation">
+    <div className="tooltip" style={{ left: Math.max(0, left), top, width: WIDTH }} role="presentation">
       <div className="tooltip-title">{title}</div>
       {rows.map((row) => (
         <div className="tooltip-row" key={row.label}>

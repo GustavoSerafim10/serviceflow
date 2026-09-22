@@ -165,7 +165,10 @@ export function LineChart({ points, series, ariaLabel, formatXShort, formatXLong
       </div>
 
       {activePoint && active != null && (
-        <Tooltip x={xAt(active)} y={MARGIN.top + 28} containerWidth={width} title={formatXLong(activePoint.x)} rows={rows} />
+        <Tooltip
+          x={xAt(active)} y={MARGIN.top + 28} containerWidth={width} containerHeight={HEIGHT}
+          title={formatXLong(activePoint.x)} rows={rows}
+        />
       )}
       <div className="sr-only" aria-live="polite">
         {activePoint ? `${formatXLong(activePoint.x)}: ${rows.map((r) => `${r.label} ${r.value}`).join(', ')}` : ''}
