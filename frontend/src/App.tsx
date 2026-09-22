@@ -2,6 +2,7 @@ import { useAuth } from './auth/AuthContext'
 import { Dashboard } from './components/Dashboard'
 import { Header } from './components/Header'
 import { LoginPage } from './components/LoginPage'
+import { ChartIcon, GearIcon, TagIcon, TicketIcon } from './components/Icons'
 import { CategoriesPage } from './components/pages/CategoriesPage'
 import { NewTicketPage } from './components/pages/NewTicketPage'
 import { SettingsPage } from './components/pages/SettingsPage'
@@ -11,11 +12,11 @@ import { paths, useRoute, type Route } from './lib/router'
 import { getEngine } from './local/localApi'
 import { STANDALONE } from './local/mode'
 
-const NAV: { label: string; href: string; active: (r: Route) => boolean }[] = [
-  { label: 'Indicadores', href: paths.dashboard, active: (r) => r.name === 'dashboard' },
-  { label: 'Chamados', href: paths.tickets, active: (r) => r.name === 'tickets' || r.name === 'new' || r.name === 'ticket' },
-  { label: 'Categorias', href: paths.categories, active: (r) => r.name === 'categories' },
-  { label: 'Configurações', href: paths.settings, active: (r) => r.name === 'settings' },
+const NAV: { label: string; href: string; icon: typeof ChartIcon; active: (r: Route) => boolean }[] = [
+  { label: 'Indicadores', href: paths.dashboard, icon: ChartIcon, active: (r) => r.name === 'dashboard' },
+  { label: 'Chamados', href: paths.tickets, icon: TicketIcon, active: (r) => r.name === 'tickets' || r.name === 'new' || r.name === 'ticket' },
+  { label: 'Categorias', href: paths.categories, icon: TagIcon, active: (r) => r.name === 'categories' },
+  { label: 'Configurações', href: paths.settings, icon: GearIcon, active: (r) => r.name === 'settings' },
 ]
 
 function LocalBanner() {
@@ -70,7 +71,10 @@ export default function App() {
       {STANDALONE && <LocalBanner />}
       <nav className="nav" aria-label="Principal">
         {NAV.map((item) => (
-          <a key={item.href} href={item.href} aria-current={item.active(route) ? 'page' : undefined}>{item.label}</a>
+          <a key={item.href} href={item.href} aria-current={item.active(route) ? 'page' : undefined}>
+            <item.icon />
+            {item.label}
+          </a>
         ))}
       </nav>
       {dashboard ? <Dashboard user={user} /> : <View route={route} role={user.role} />}

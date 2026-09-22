@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '../auth/AuthContext'
 import type { User } from '../api/types'
 import { EMBEDDED, STANDALONE } from '../local/mode'
+import { LogoMark } from './Icons'
 
 type Theme = 'system' | 'light' | 'dark'
 const THEME_KEY = 'sf.theme'
@@ -45,7 +46,11 @@ export function Header({ user }: { user: User }) {
 
   return (
     <header className="app-header">
-      <div className="brand">ServiceFlow <span>· Chamados de TI</span></div>
+      <div className="brand">
+        <LogoMark className="brand-mark" />
+        <span className="brand-word">ServiceFlow</span>
+        <span className="brand-tagline">Chamados de TI</span>
+      </div>
       <div className="header-actions">
         {!STANDALONE && (
           <span className="user-chip">

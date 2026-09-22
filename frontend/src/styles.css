@@ -30,9 +30,27 @@
 
   --good: #0ca30c;
   --good-text: #006300;
+  --good-wash: rgba(0, 99, 0, 0.08);
   --critical: #d03b3b;
 
-  --font: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  /* Marca do produto: cor de UI (botões, links, navegação, foco) — DISTINTA da cor categórica dos
+     gráficos (--series-1) de propósito, para dado de gráfico nunca se confundir com cromo de interface.
+     Índigo #4338ca escolhido por contraste calculado (WCAG), não no olho: 7.7:1 como texto sobre esta
+     superfície, 7.9:1 como rótulo branco em botão preenchido. */
+  --brand: #4338ca;
+  --brand-ink: #ffffff; /* texto sobre um botão preenchido com --brand */
+  --brand-wash: rgba(67, 56, 202, 0.08); /* fundo sutil: hover, chip "em atendimento" */
+
+  --shadow-sm: 0 1px 2px rgba(15, 14, 23, 0.05), 0 1px 1px rgba(15, 14, 23, 0.04);
+  --shadow-md: 0 8px 24px rgba(15, 14, 23, 0.1), 0 2px 6px rgba(15, 14, 23, 0.06);
+
+  /* Três papéis: Sora nos títulos/números grandes (personalidade, geométrica), IBM Plex Sans no corpo
+     (legibilidade "enterprise"), IBM Plex Mono nos números pequenos em destaque (ar de console técnico,
+     apropriado para uma ferramenta de operação de TI). Pilha de reserva completa: sem internet, cai num
+     sans/mono do sistema sem quebrar. */
+  --font: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Sora', var(--font);
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'Cascadia Code', Consolas, monospace;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -56,6 +74,14 @@
     --meter-fill: #3987e5;
     --meter-track: #104281;
     --good-text: #0ca30c;
+    --good-wash: rgba(12, 163, 12, 0.16);
+    /* Escuro: a âncora também inverte aqui — o preenchimento fica mais claro que a superfície, então o
+       texto sobre ele precisa ser escuro (não branco) para manter o contraste calculado (6,6:1). */
+    --brand: #818cf8;
+    --brand-ink: #0b0b0b;
+    --brand-wash: rgba(129, 140, 248, 0.16);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.45), 0 1px 1px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 10px 28px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.4);
   }
 }
 
@@ -78,6 +104,12 @@
   --meter-fill: #3987e5;
   --meter-track: #104281;
   --good-text: #0ca30c;
+  --good-wash: rgba(12, 163, 12, 0.16);
+  --brand: #818cf8;
+  --brand-ink: #0b0b0b;
+  --brand-wash: rgba(129, 140, 248, 0.16);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.45), 0 1px 1px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 10px 28px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
 /* ==========================================================================
@@ -102,7 +134,7 @@ button, input { font: inherit; color: inherit; }
   overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
 }
 
-:focus-visible { outline: 2px solid var(--series-1); outline-offset: 2px; border-radius: 4px; }
+:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; border-radius: 4px; }
 
 .page { max-width: 1200px; margin: 0 auto; padding: 0 16px 48px; }
 
@@ -111,22 +143,31 @@ button, input { font: inherit; color: inherit; }
    ========================================================================== */
 .app-header {
   display: flex; align-items: center; justify-content: space-between; gap: 16px;
-  padding: 16px 0; flex-wrap: wrap;
+  padding: 18px 0; flex-wrap: wrap; border-bottom: 1px solid var(--border); margin-bottom: 4px;
 }
-.brand { font-size: 18px; font-weight: 650; letter-spacing: -0.01em; }
-.brand span { color: var(--text-2); font-weight: 400; }
+.brand { display: inline-flex; align-items: center; gap: 10px; }
+.brand-mark { width: 30px; height: 30px; flex: none; color: var(--brand); }
+.brand-word {
+  font-family: var(--font-display); font-size: 19px; font-weight: 700; letter-spacing: -0.01em;
+}
+.brand-tagline { color: var(--text-2); font-weight: 500; font-size: 13px; margin-left: 2px; }
 .header-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .user-chip { color: var(--text-2); font-size: 14px; }
 .user-chip strong { color: var(--text); font-weight: 600; }
 
 .btn {
   border: 1px solid var(--border); background: var(--surface); border-radius: 8px;
-  padding: 6px 12px; cursor: pointer; min-height: 32px;
+  padding: 7px 14px; cursor: pointer; min-height: 36px; font-weight: 500;
+  transition: background 0.12s, box-shadow 0.12s, transform 0.12s, border-color 0.12s;
 }
 .btn:hover { background: var(--hover); }
-.btn-primary { background: var(--series-1); border-color: transparent; color: #fff; font-weight: 600; }
-.btn-primary:hover { background: var(--series-1); filter: brightness(1.08); }
-.btn[disabled] { opacity: 0.6; cursor: default; }
+.btn-primary {
+  background: var(--brand); border-color: transparent; color: var(--brand-ink); font-weight: 600;
+  box-shadow: var(--shadow-sm);
+}
+.btn-primary:hover { filter: brightness(1.06); box-shadow: var(--shadow-md); transform: translateY(-1px); }
+.btn-primary:active { transform: translateY(0); filter: brightness(0.97); }
+.btn[disabled] { opacity: 0.6; cursor: default; transform: none; box-shadow: none; }
 
 /* ==========================================================================
    Filtros (uma linha, acima de tudo que escopam)
@@ -142,7 +183,7 @@ button, input { font: inherit; color: inherit; }
 }
 .segmented button + button { border-left: 1px solid var(--border); }
 .segmented button:hover { background: var(--hover); }
-.segmented button[aria-pressed='true'] { color: var(--text); font-weight: 650; }
+.segmented button[aria-pressed='true'] { color: var(--brand); font-weight: 650; }
 .segmented button .check { width: 16px; height: 16px; flex: none; }
 /* Celular: os presets quebram em várias linhas (botões soltos) em vez de estourar a largura da tela. */
 @media (max-width: 640px) {
@@ -172,13 +213,20 @@ button, input { font: inherit; color: inherit; }
 
 .tile, .card {
   background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px;
-  transition: opacity 0.15s;
+  box-shadow: var(--shadow-sm); transition: opacity 0.15s, box-shadow 0.15s;
 }
 .tile-label { color: var(--text-2); font-size: 13px; }
-.tile-value { font-size: 30px; font-weight: 650; letter-spacing: -0.02em; line-height: 1.15; margin-top: 4px; }
+.tile-value {
+  font-family: var(--font-display); font-size: 30px; font-weight: 700; letter-spacing: -0.02em;
+  line-height: 1.15; margin-top: 4px;
+}
 .tile-sub { color: var(--text-2); font-size: 13px; margin-top: 4px; }
 
-/* Figura-herói: o único número que o painel lidera. >=48px, mesma sans, algarismos proporcionais. */
+/* Figura-herói: o único número que o painel lidera. >=48px, mesma família (Sora, a sans deste app —
+   nunca uma face de exibição à parte), algarismos proporcionais. A faixa no topo marca "este é o número
+   que importa" sem competir com o valor. */
+.hero { position: relative; overflow: hidden; }
+.hero::before { content: ''; position: absolute; inset: 0 0 auto 0; height: 3px; background: var(--brand); }
 .hero .tile-value { font-size: 56px; letter-spacing: -0.03em; line-height: 1.05; }
 
 .meter { height: 8px; border-radius: 4px; background: var(--meter-track); margin-top: 12px; overflow: hidden; }
@@ -194,14 +242,14 @@ button, input { font: inherit; color: inherit; }
 @media (max-width: 900px) { .grid-2 { grid-template-columns: minmax(0, 1fr); } }
 
 .card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
-.card-title { font-size: 15px; font-weight: 650; }
+.card-title { font-family: var(--font-display); font-size: 15px; font-weight: 700; }
 .card-sub { color: var(--text-2); font-size: 13px; margin-top: 2px; }
 .card-note { color: var(--text-muted); font-size: 12.5px; margin-top: 12px; }
 .view-toggle {
   border: 1px solid var(--border); background: transparent; border-radius: 6px; padding: 3px 8px;
-  font-size: 12.5px; cursor: pointer; color: var(--text-2); white-space: nowrap;
+  font-size: 12.5px; cursor: pointer; color: var(--text-2); white-space: nowrap; transition: background 0.12s, color 0.12s;
 }
-.view-toggle:hover { background: var(--hover); }
+.view-toggle:hover { background: var(--brand-wash); color: var(--brand); }
 
 .empty { color: var(--text-2); padding: 24px 0; text-align: center; }
 
@@ -215,7 +263,7 @@ button, input { font: inherit; color: inherit; }
 .key-box { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
 
 .line-chart { display: block; width: 100%; touch-action: pan-y; }
-.line-chart:focus-visible { outline: 2px solid var(--series-1); outline-offset: 4px; }
+.line-chart:focus-visible { outline: 2px solid var(--brand); outline-offset: 4px; }
 .line-chart .grid { stroke: var(--grid); stroke-width: 1; }
 .line-chart .baseline { stroke: var(--baseline); stroke-width: 1; }
 .line-chart text { fill: var(--text-muted); font-size: 11px; font-variant-numeric: tabular-nums; }
@@ -230,7 +278,7 @@ button, input { font: inherit; color: inherit; }
 .tooltip-title { color: var(--text-2); font-size: 12px; margin-bottom: 4px; }
 .tooltip-row { display: flex; align-items: center; gap: 8px; }
 .tooltip-row + .tooltip-row { margin-top: 3px; }
-.tooltip-value { font-weight: 650; color: var(--text); font-variant-numeric: tabular-nums; }
+.tooltip-value { font-family: var(--font-mono); font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; }
 .tooltip-label { color: var(--text-2); }
 
 /* Barras horizontais: <=24px de espessura, ponta de dados arredondada 4px, base (esquerda) reta. */
@@ -240,7 +288,7 @@ button, input { font: inherit; color: inherit; }
 .bar-label { color: var(--text-2); font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .bar-track { display: flex; align-items: center; min-width: 0; }
 .bar { height: 20px; border-radius: 0 4px 4px 0; flex: none; min-width: 2px; }
-.bar-value { margin-left: 8px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.bar-value { margin-left: 8px; font-family: var(--font-mono); font-weight: 600; font-variant-numeric: tabular-nums; }
 
 /* ==========================================================================
    Tabelas
@@ -256,7 +304,7 @@ table.data tbody tr:last-child td { border-bottom: 0; }
 .now-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; margin: 0; }
 .now-list div { border-left: 2px solid var(--grid); padding-left: 10px; }
 .now-list dt { color: var(--text-2); font-size: 12.5px; }
-.now-list dd { margin: 0; font-size: 22px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.now-list dd { margin: 0; font-family: var(--font-display); font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
 
 /* ==========================================================================
    Login / avisos
@@ -278,12 +326,16 @@ table.data tbody tr:last-child td { border-bottom: 0; }
 /* ==========================================================================
    Navegação, formulários, chamados
    ========================================================================== */
-.nav { display: flex; gap: 4px; flex-wrap: wrap; margin: 0 0 12px; border-bottom: 1px solid var(--grid); }
+.nav { display: flex; gap: 2px; flex-wrap: wrap; margin: 0 0 16px; border-bottom: 1px solid var(--grid); }
 .nav a {
-  padding: 8px 12px; color: var(--text-2); text-decoration: none; border-bottom: 2px solid transparent; margin-bottom: -1px;
+  display: inline-flex; align-items: center; gap: 7px; padding: 9px 13px; color: var(--text-2);
+  text-decoration: none; font-weight: 500; border-bottom: 2px solid transparent; margin-bottom: -1px;
+  border-radius: 8px 8px 0 0; transition: background 0.12s, color 0.12s;
 }
-.nav a:hover { color: var(--text); }
-.nav a[aria-current='page'] { color: var(--text); font-weight: 650; border-bottom-color: var(--series-1); }
+.nav a svg { width: 16px; height: 16px; flex: none; opacity: 0.75; }
+.nav a:hover { color: var(--text); background: var(--hover); }
+.nav a[aria-current='page'] { color: var(--text); font-weight: 650; border-bottom-color: var(--brand); }
+.nav a[aria-current='page'] svg { color: var(--brand); opacity: 1; }
 
 .local-banner {
   background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
@@ -293,7 +345,7 @@ table.data tbody tr:last-child td { border-bottom: 0; }
 .local-banner.warn { border-color: var(--critical); }
 .local-banner a { color: var(--text); text-underline-offset: 2px; }
 
-.page-title { font-size: 20px; font-weight: 650; letter-spacing: -0.01em; }
+.page-title { font-family: var(--font-display); font-size: 21px; font-weight: 700; letter-spacing: -0.01em; }
 .page-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
 /* minmax(0, 1fr): a coluna pode encolher abaixo do conteúdo (a tabela larga rola DENTRO do cartão, não a página). */
 .stack { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
@@ -310,13 +362,24 @@ table.data tbody tr:last-child td { border-bottom: 0; }
 @media (max-width: 640px) { .form-row { grid-template-columns: 1fr; } }
 .actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 a.btn { display: inline-flex; align-items: center; text-decoration: none; }
-a.btn-primary { color: #fff; }
+a.btn-primary { color: var(--brand-ink); }
 .btn-danger { color: var(--critical); border-color: var(--critical); }
-.link { color: var(--text); text-underline-offset: 2px; font-weight: 600; }
+.link { color: var(--brand); text-decoration: none; font-weight: 600; }
+.link:hover { text-decoration: underline; text-underline-offset: 2px; }
 
 .badge { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
 .badge .dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
-.badge-status { border: 1px solid var(--border); border-radius: 999px; padding: 1px 10px; font-size: 13px; }
+/* Chips de status preenchidos (ao estilo Linear/Jira): cada estágio do ciclo de vida tem sua própria
+   cor semântica. "Em atendimento" usa a cor de marca (é o que está no seu fluxo agora); "resolvido"
+   reaproveita o verde de sucesso já reservado para SLA; os estados finais ficam neutros. */
+.badge-status {
+  border: 1px solid transparent; border-radius: 999px; padding: 3px 11px; font-size: 12.5px; font-weight: 600;
+  background: var(--hover); color: var(--text-2);
+}
+.badge-status[data-status='EM_ATENDIMENTO'] { background: var(--brand-wash); color: var(--brand); }
+.badge-status[data-status='RESOLVIDO'] { background: var(--good-wash); color: var(--good-text); }
+.badge-status[data-status='FECHADO'] { background: var(--grid); color: var(--text-muted); }
+.badge-status[data-status='CANCELADO'] { background: var(--grid); color: var(--text-muted); text-decoration: line-through; text-decoration-color: var(--baseline); }
 .badge-muted { color: var(--text-muted); }
 
 table.data td.wrap { white-space: normal; min-width: 180px; text-align: left; }

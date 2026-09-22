@@ -25,5 +25,8 @@ export default defineConfig(({ mode }) => ({
     environment: 'jsdom',
     setupFiles: './src/test/setup.ts',
     css: false,
+    // Padrão (5s) é curto demais quando os arquivos de teste rodam em paralelo numa máquina modesta:
+    // fica todo mundo disputando CPU e um teste correto estoura o tempo por lentidão do ambiente, não por bug.
+    testTimeout: 15000,
   },
 }))
