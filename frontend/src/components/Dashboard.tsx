@@ -9,6 +9,7 @@ import { formatDayLong, formatDayShort, formatInt, formatMinutes, formatRate } f
 import { PRIORITY_INFO } from '../lib/labels'
 import { paths } from '../lib/router'
 import { STANDALONE } from '../local/mode'
+import { getEngine } from '../local/localApi'
 import { periodForPreset, validatePeriod, type PeriodPreset } from '../lib/period'
 import { BarChart, type BarRow } from './charts/BarChart'
 import { LineChart, type LineSeries } from './charts/LineChart'
@@ -56,6 +57,11 @@ export function Dashboard({ user }: { user: User }) {
   const suggestions = useQuery({
     queryKey: ['suggestion-metrics'], queryFn: getSuggestionMetrics, enabled: user.role === 'ADMIN' && !STANDALONE,
   })
+  function loadDemo() {
+    getEngine().loadDemo()
+    window.location.reload()
+  }
+
   const noTicketsYet = summary.data !== undefined && summary.data.current.total === 0
 
   const queries = [summary, timeline, byPriority, byCategory, byTechnician]
@@ -77,6 +83,13 @@ export function Dashboard({ user }: { user: User }) {
         <p className="local-banner" role="note">
           Ainda não há chamados. Os indicadores aparecem conforme você abre e atende chamados:{' '}
           <a href={paths.new}>abrir o primeiro chamado</a>.
+          {STANDALONE && (
+            <>
+              {' '}Ou, para ver o painel funcionando,{' '}
+              <button className="btn" type="button" onClick={loadDemo}>carregar dados de demonstração</button>
+              {' '}(fictícios; dá para apagar em Configurações).
+            </>
+          )}
         </p>
       )}
 

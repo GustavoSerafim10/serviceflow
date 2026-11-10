@@ -3,6 +3,10 @@
 API REST de **gestão de chamados de TI (ITSM)** com controle de SLA, construída com Java 21 e Spring Boot 3.
 Projeto de portfólio desenvolvido em etapas, com foco em arquitetura em camadas, segurança e regras de negócio reais.
 
+🌐 **[Abrir a versão local](https://gustavoserafim10.github.io/serviceflow/)** (roda no navegador; clique em *carregar dados de demonstração* para ver o painel preenchido) · 📄 **[Estudo de caso](docs/estudo-de-caso.md)**
+
+![Painel de indicadores do ServiceFlow](docs/screenshots/painel-indicadores.png)
+
 ## Funcionalidades
 
 - **Autenticação JWT** com **refresh token** (rotação e detecção de reuso) e autorização por roles: `ADMIN`, `TECNICO`, `SOLICITANTE`
@@ -136,6 +140,8 @@ O front também roda **sozinho**, guardando tudo no navegador de quem usa: `cd f
 É a forma mais simples de usar e de publicar uma versão pública que **começa vazia** (cada visitante tem os próprios dados,
 que nunca saem do navegador). Tem as telas de chamados, categorias, prazos de SLA e o painel, com as mesmas regras do backend.
 Só não tem a sugestão automática (depende do serviço Python). Detalhes em [`frontend/README.md`](frontend/README.md).
+
+No painel vazio, o botão **carregar dados de demonstração** preenche o modo local com ~45 chamados fictícios (gerados em `frontend/src/local/demo.ts`), para quem quiser ver os indicadores sem cadastrar nada.
 
 ### Dados de demonstração
 

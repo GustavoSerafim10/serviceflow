@@ -4,6 +4,7 @@ import type {
   TicketFilters, TicketResponse, TicketStatus, User,
 } from '../api/types'
 import { dueAt } from './calendar'
+import { demoState } from './demo'
 import {
   ME_ID, emptyState, isValidState,
   type LComment, type LHistory, type LTicket, type LocalState, type StateStorage,
@@ -319,6 +320,12 @@ export class LocalEngine {
     } catch {
       return false
     }
+  }
+
+  /** Substitui TODOS os dados por chamados fictícios de demonstração (ver demo.ts). */
+  loadDemo() {
+    this.state = demoState(this.now())
+    this.commit()
   }
 
   reset() {
